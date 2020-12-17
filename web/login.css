@@ -18,6 +18,21 @@
     margin-top: 50px;
 }
 
+#falsepasswdtext {
+    text-align: start;
+    font-family: sans-serif;
+}
+
+#falsepasswdlogo {
+    position: relative;
+    float: left;
+    margin-right: 10px;
+}
+
+#falsepasswd {
+    color: red;
+}
+
 #main {
     border: 5px solid white;
     background-color: white;

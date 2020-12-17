@@ -9,21 +9,28 @@
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="login.css">
+
+    <script
+			  src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+			  integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs="
+              crossorigin="anonymous"></script>
+    <script src="login.js"></script>
 </head>
 <body>
     <div class="image">
     <div id="main">
         <span class="material-icons" id="loginicon">lock</span>
         <h1 class="loginfont" id="logintitle">CONNEXION</h1>
-        
-        <form action="#">
-            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id="loginpasswd">
-                <input class="mdl-textfield__input" type="password" id="passwd">
-                <label class="mdl-textfield__label" for="passwd" id="abc">Mot de passe</label>
-            </div>
-        </form>
+        <div id="falsepasswd">
+            <span class="material-icons redcolor" id="falsepasswdlogo">error</span>
+            <p class="redcolor" id="falsepasswdtext">Mot de passe faux !</p>
+        </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="password" id="passwd">
+            <label class="mdl-textfield__label loginpasswd" for="passwd">Mot de passe</label>
+        </div>
   
-        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="loginbutton" type="submit" value="Se connecter">
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="loginbutton" value="Se connecter">
             Se connecter
         </button>
     </div>
