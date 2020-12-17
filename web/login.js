@@ -13,6 +13,14 @@ $(document).ready(function (){
             error("Vous devez renseigner un mot de passe !");
         }
     });
+
+    $('#passwd').on("keyup", function(event) {
+        if(event.key == "Enter") {
+            console.log("clicked");
+            event.preventDefault();
+            $('#loginbutton').trigger("click");
+        }
+    });
 });
 
 function connect(password) {
@@ -33,4 +41,5 @@ function error(message) {
     var content = "<div id=\"falsepasswd\"><span class=\"material-icons redcolor\" id=\"falsepasswdlogo\">error</span><p class=\"redcolor\" id=\"falsepasswdtext\">" + message + "</p></div>"
     var target = document.getElementById("falsepasswd");
     target.innerHTML = content;
+    $('#passwd').val('');
 }

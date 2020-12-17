@@ -2,6 +2,7 @@
 $PASSWD = "test";
 
 function getReturnJSON($sucess, $valid) {
+    $ret = new \stdClass();
     if(!$valid) {
         $ret->valid = FALSE;
         $ret->sucess = FALSE;
