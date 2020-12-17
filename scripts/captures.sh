@@ -1,14 +1,11 @@
 #!/bin/bash
 
-usage=$(printf "USAGE : ./captures.sh [OPTIONS]\neffectue des captures toutes les secondes\n[OPTIONS]\n-s,--set <directory> change le repertoire d'enregistrement des captures\n-d,--debug exécute et affiche toutes les logs\n-l,--log cat le fichier log.txt\n-g,--get prend une capture\n-c,--clear supprime toutes les captures\n-h,--help display informations")
+usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n-s,--set <directory> change le repertoire d'enregistrement des captures\n-d,--debug exécute et affiche toutes les logs\n-l,--log cat le fichier log.txt\n-g,--get prend une capture\n-c,--clear supprime toutes les captures\n-h,--help display informations")
 error="\e[31merror :\e[39m"
 success="\e[32msuccess :\e[39m"
 phelp=": see --help for more informations\n"
-date=$(date '+%Y.%m.%d.%H.%M.%S')
-dated=$(date '+%H:%M:%S')
 nbc=59
-debug=0
-
+debug=2
 updatedir() {
 	sed '1d' log.txt > log; mv log log.txt
 	sed -i "1 i\ $1" log.txt
@@ -35,7 +32,10 @@ sdir() {
 	do
 		case $create in
 			O|o)
-				updatedir $1
+				if [[ ! -z $1 ]]
+				then
+					updatedir $1||echo "not update"
+				fi
                         	mkdir $directory
                         	if [ "$?" -eq 0 ]
                         	then
@@ -70,14 +70,15 @@ catlog() {
 
 cleard() {
 	directory=$(head -n 1 log.txt)
-	rm $directory/* && exit 
+	rm -r $directory/* &&printf "$success directory $directory cleared\n"&&exit 0
 }
 
 
 log() {
 	if [ ! -f log.txt ]
         then
-		read -p "$error Veuillez définir un répertoire où enregistrer les captures : " directory
+		printf  "$error Veuillez définir un répertoire où enregistrer les captures : " 
+		read directory
                 echo $directory>log.txt
         else
 		directory=$(head -n 1 log.txt)
@@ -86,12 +87,14 @@ log() {
 
 
 logd() {
-	if [ ! -f log.txt ]
+	if [ ! -f log.txt ] || [[ ! -s log.txt ]]
         then
-               read -p "$error répertoire non défini le définir : " directory
+               printf "$error répertoire non défini le définir : " 
+	       read directory
                echo $directory>log.txt
         else
-               directory=$(head -n 1 log.txt)
+               	directory=$(head -n 1 log.txt)
+		echo "log else directory = $directory"
         fi
 }
 
@@ -119,7 +122,7 @@ dir() {
 	if [ ! -d $directory ]
         then
         	echo "$date -> le dossier $directory n'existe pas">>log.txt
-        	exit 1
+        	sdir||exit 1
         fi
 }
 
@@ -128,7 +131,7 @@ dird() {
 	if [ ! -d $directory ]
         then
                 printf "$error $dated -> le dossier $directory n'existe pas\n"
-                exit 1
+                sdir||exit 1
         fi
 }
 
@@ -158,8 +161,7 @@ fswd() {
 	fi
 }
 
-
-if [ "$#" -gt "2" ]
+if [ "$#" -gt "2" ]||[ "$#" -eq "0" ]
 then
 	printf "$usage\n"
 	exit 1
@@ -189,6 +191,7 @@ then
 		-d|--debug) errorh "Mauvais usage de l'option -d,--debug";;
 		-l|--log) errorh "mauvais usage de l'option -l,--log";;
 		-c|--clear) errorh "mauvais usage de l'option -c,--clear";;
+		start) errorh "mauvais usage de start";;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -202,6 +205,7 @@ then
 		-s|--set) errorh "Mauvais usage de l'option -s, --set";;
 		-l|--log) catlog;;
 		-c|--clear) cleard;;
+		start) debug=0;;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -209,7 +213,7 @@ then
 	esac
 fi
 
-if [ "$debug" -eq "0" ]
+if [ "$debug" -eq "0" ]||[ "$debug" -eq "2" ]
 then
 	for i in $(seq 1 1 $nbc)
 	do
@@ -217,7 +221,10 @@ then
 		camd
 		dir
 		fsw
-		fswebcam -q --no-banner $directory/$date.jpg&
+		if [ $nbc = 1 ]
+		then
+			fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg& 2>>log.txt&&printf "$success capture prise et enregistrée\n"||errore "une erreur est survenue essayez -d ou --debug\n"
+		fi
 		sleep 1
 	
 	done
@@ -229,8 +236,9 @@ else
 		camd&& printf "/dev/video0 trouvé\n"
 		dird&& printf "directory $directory existe\n"
 		fswd&& printf "fswebcam installé\n"
-                fswebcam --no-banner -q  $directory/$date.jpg&
-		printf "$success $dated -> capture prise\n"
+                fswebcam --no-banner -q  $directory/$(date '+%H:%M:%S').jpg&
+		printf "$(ls -l $directory|wc -l) images dans $directory\n"
+		printf "$success $(date '+%H:%M:%S') -> capture prise\n"
                 sleep 1
 	done
 fi
