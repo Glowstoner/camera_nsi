@@ -1,0 +1,1 @@
+2020.12.17.01.29.51 -> le dossier /media/pi/NAS/captures n'existe pas

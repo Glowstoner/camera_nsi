@@ -11,11 +11,21 @@
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
+    <div class="image">
     <div id="main">
-        <h1 id="title">Connexion au service</h1>
-        <label>Mot de passe</label>
-        <input type="text" id="passwd" name="Mot de passe"><br>
-        <input type="submit" value="Se connecter">
+        <h1 class="loginfont" id="logintitle">Connexion</h1>
+        <span class="material-icons" id="loginicon">lock</span><br>
+        <form action="#">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id="loginpasswd">
+                <input class="mdl-textfield__input" type="password" id="passwd">
+                <label class="mdl-textfield__label" for="passwd" id="abc">Mot de passe</label>
+            </div>
+        </form>
+  
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="loginbutton" type="submit" value="Se connecter">
+            Se connecter
+        </button>
+    </div>
     </div>
 </body>
 </html>

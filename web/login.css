@@ -1,13 +1,28 @@
-#title {
-    font-weight: bold;
-    margin-bottom: 60px;
+.loginfont {
     font-family: monospace;
+    color: #607d8b
+}
+
+#logintitle {
+    font-weight: bold;
+    margin-bottom: 20px;
+    font-size: 30px;
+}
+
+#loginicon {
+    font-size: 200px;
+    margin-bottom: 10px;
+    color: #607d8b
+}
+
+#loginbutton {
+    padding-bottom: 20px;
 }
 
 #main {
-    border: 5px solid whitesmoke;
+    border: 5px solid rgb(28, 28, 28);
     border-radius: 20px;
-    background-color: whitesmoke;
+    background-color: rgb(28, 28, 28);
     display: inline-block;
     vertical-align: middle;
     line-height: 100%;
@@ -15,7 +30,9 @@
 }
 
 body {
-    background-color: rgb(39, 39, 39);
+    background-image: url("blur.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
     line-height: 100vh;  
     text-align: center;
 }
