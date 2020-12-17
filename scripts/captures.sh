@@ -10,7 +10,9 @@ nbc=59
 debug=0
 
 updatedir() {
-	directory=sed -i "1s/.*/"$(pwd)$1"/"log.txt
+	sed '1d' log.txt > log; mv log log.txt
+	sed -i "1 i\ $1" log.txt
+	log
 }
 
 
@@ -27,15 +29,16 @@ errore() {
 
 
 sdir() {
-	read -p "$error le répertoire spécifié n'existe pas voulez-vous le créer ? O/n " create
+	printf "$error le répertoire spécifié n'existe pas voulez-vous le créer ? O/n "
+	read create
         while [ "$create" != "O" ] || [ "$create" != "o" ] || [ "$create" != "N" ] || [ "$create" != "n" ]
 	do
 		case $create in
 			O|o)
-                        	mkdir $create
+				updatedir $1
+                        	mkdir $directory
                         	if [ "$?" -eq 0 ]
                         	then
-					updatedir $2
                                 	printf "$success répertoire créé et mis à jour\n"
                                 	exit 0
                         	else
@@ -148,7 +151,7 @@ fswd() {
         then
                 printf "$error fswebcam non trouvé dans l'apt list\n"
 		exit 1
-	elif [ "a" -eq "127" ]
+	elif [ "$a" -eq "127" ]
 	then
 		printf "$error commmand not found\n"
 		exit 1
@@ -177,7 +180,7 @@ then
                         	then
                                 	updatedir $2&&printf "$success répertoire mis à jour\n"
                         	else
-					sdir	
+					sdir $2	
 					exit 0
 				fi
 			fi
@@ -196,6 +199,7 @@ then
 	case $1 in 
 		-g|--get) nbc=1;;
 		-d|--debug) debug=1;;
+		-s|--set) errorh "Mauvais usage de l'option -s, --set";;
 		-l|--log) catlog;;
 		-c|--clear) cleard;;
 		-h|--help)
@@ -213,19 +217,19 @@ then
 		camd
 		dir
 		fsw
-		fswebcam -q $directory/$date.jpg&
+		fswebcam -q --no-banner $directory/$date.jpg&
 		sleep 1
 	
 	done
 else
 	for i in $(seq 1 1$nbc)
         do
-		printf "------------i = $i--------------\n"
-		logd&& printf "	directory = $directory\n"
-		camd&& printf "	/dev/video0 trouvé\n"
-		dird&& printf "	directory $directory existe\n"
-		fswd&& printf "	fswebcam installé\n"
-                fswebcam -q $directory/$date.jpg&
+		echo "------------i = $i--------------"
+		logd&& printf "directory = $directory\n"
+		camd&& printf "/dev/video0 trouvé\n"
+		dird&& printf "directory $directory existe\n"
+		fswd&& printf "fswebcam installé\n"
+                fswebcam --no-banner -q  $directory/$date.jpg&
 		printf "$success $dated -> capture prise\n"
                 sleep 1
 	done
