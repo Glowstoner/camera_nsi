@@ -11,10 +11,16 @@ if [ "$#" -gt "3" ]
 then
 	printf "$usage\n"
 	exit 1
-elif [[ "$#" -ne "1" && "$1" !=  "-s" ]]
+elif [[ "$#" -gt "1" ]]
 then
-	printf "$usage\n"
-	exit 1
+	case  $1 in
+		-s|--set)
+		;;
+		*) 
+			printf "$usage\n"
+			exit 1
+		;;
+	esac
 elif [ "$#" -ne "0" ]
 then
 	case $1 in 
@@ -70,13 +76,13 @@ then
 			exit 1
 		fi
 	
-		if [ ! -d /media/pi/NAS/captures ]
+		if [ ! -d $directory ]
 		then
-			echo "$date -> le dossier /media/pi/NAS/captures n'existe pas">>log.txt
+			echo "$date -> le dossier $directory n'existe pas">>log.txt
 			exit 1
 		fi
 	
-		fswebcam -q /media/pi/NAS/captures/$date.jpg&
+		fswebcam -q $directory/$date.jpg&
 		sleep 1
 	
 	done
@@ -91,12 +97,12 @@ else
 
                 if [ ! -d /media/pi/NAS/captures ]
                 then
-                        printf "\e[31m$dated -> le dossier /media/pi/NAS/captures n'existe pas\n"
+                        printf "\e[31m$dated -> le dossier $directory n'existe pas\n"
 			iebug=1
                         exit 1
                 fi
 
-                fswebcam -q /media/pi/NAS/captures/$date.jpg&
+                fswebcam -q $directory/$date.jpg&
 		echo "$dated -> capture prise"
                 sleep 1
 	done
