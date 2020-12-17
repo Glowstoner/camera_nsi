@@ -59,10 +59,10 @@ sdir() {
 catlog() {
 	if [ -f log.txt ]
         then
-		cat log.txt
+		more log.txt
                 exit 0
         else
-            	printf "$usage\n"
+            	errorh "Le fichier log n'existe pas il sera défini automatiquement lors de la première utilisation, et le sera aussi avec -d"
                 exit 1
 	fi
 }
@@ -225,6 +225,7 @@ then
 		then
 			fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg& 2>>log.txt&&printf "$success capture prise et enregistrée\n"||errore "une erreur est survenue essayez -d ou --debug\n"
 		fi
+		fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg& 2>>log.txt
 		sleep 1
 	
 	done
