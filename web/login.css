@@ -21,12 +21,14 @@
 #falsepasswdtext {
     text-align: start;
     font-family: sans-serif;
+    font-size: 14px;
 }
 
 #falsepasswdlogo {
     position: relative;
     float: left;
     margin-right: 10px;
+    font-size: 35px;
 }
 
 #falsepasswd {

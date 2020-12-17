@@ -11,9 +11,7 @@
     <link rel="stylesheet" href="login.css">
 
     <script
-			  src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-			  integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs="
-              crossorigin="anonymous"></script>
+			  src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="login.js"></script>
 </head>
 <body>
@@ -21,15 +19,12 @@
     <div id="main">
         <span class="material-icons" id="loginicon">lock</span>
         <h1 class="loginfont" id="logintitle">CONNEXION</h1>
-        <div id="falsepasswd">
-            <span class="material-icons redcolor" id="falsepasswdlogo">error</span>
-            <p class="redcolor" id="falsepasswdtext">Mot de passe faux !</p>
-        </div>
+        <div id="falsepasswd"></div>
         <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
             <input class="mdl-textfield__input" type="password" id="passwd">
             <label class="mdl-textfield__label loginpasswd" for="passwd">Mot de passe</label>
         </div>
-  
+        <br>
         <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="loginbutton" value="Se connecter">
             Se connecter
         </button>
