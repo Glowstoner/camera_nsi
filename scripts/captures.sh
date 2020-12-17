@@ -1,9 +1,9 @@
 #!/bin/bash
 
 usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n-s,--set <directory> change le repertoire d'enregistrement des captures\n-d,--debug exécute et affiche toutes les logs\n-l,--log cat le fichier log.txt\n-g,--get prend une capture\n-c,--clear supprime toutes les captures\n-h,--help display informations")
-error="\e[31merror :\e[39m"
-success="\e[32msuccess :\e[39m"
-phelp=": see --help for more informations\n"
+error="\e[31merreur :\e[39m"
+success="\e[32msuccés :\e[39m"
+phelp=": voir --help pour plus d'informations\n"
 nbc=59
 debug=2
 updatedir() {
@@ -50,7 +50,8 @@ sdir() {
 				exit 1
                                 ;;
                         *)
-                                read -p "$error le répertoire spécifié n'existe pas voulez-vous le créer ? O/n" create
+                                print  "$error le répertoire spécifié n'existe pas voulez-vous le créer ? O/n"
+				read create
                         ;;
                	esac
       	done
