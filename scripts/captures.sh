@@ -104,7 +104,7 @@ logd() {
 cam() {
 	if [ ! -e /dev/video0 ]
         then
-		echo "$date -> la caméra n'est pas branchée">>log.txt
+		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> la caméra n'est pas branchée">>log.txt
                 exit 1
         fi
 }
@@ -113,7 +113,7 @@ cam() {
 camd() {
 	if [ ! -e /dev/video0 ]
         then
-        printf "$error $dated -> /dev/video0 n'existe pas\n"
+        printf "$error $(date '+%H:%M:%S') -> /dev/video0 n'existe pas\n"
         exit 1
         fi
 
@@ -123,7 +123,7 @@ camd() {
 dir() {
 	if [ ! -d $directory ]
         then
-        	echo "$date -> le dossier $directory n'existe pas">>log.txt
+		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> le dossier $directory n'existe pas">>log.txt
         	sdir||exit 1
         fi
 }
@@ -132,7 +132,7 @@ dir() {
 dird() {
 	if [ ! -d $directory ]
         then
-                printf "$error $dated -> le dossier $directory n'existe pas\n"
+                printf "$error $(date '+%H:%M:%S') -> le dossier $directory n'existe pas\n"
                 sdir||exit 1
         fi
 }
