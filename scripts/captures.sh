@@ -47,6 +47,7 @@ sdir() {
                         ;;
                         N|n)
 				printf "Le répertoire n'a pas été mis à jour\n"
+				exit 1
                                 ;;
                         *)
                                 read -p "$error le répertoire spécifié n'existe pas voulez-vous le créer ? O/n" create
