@@ -6,7 +6,12 @@ dated=$(date '+%H:%M:%S')
 nbc=59
 directory="/media/pi/NAS/captures/"
 debug=0
+
 if [ "$#" -gt "3" ]
+then
+	printf "$usage\n"
+	exit 1
+elif [[ "$#" -ne "1" && "$1" !=  "-s" ]]
 then
 	printf "$usage\n"
 	exit 1
@@ -36,7 +41,12 @@ then
 				exit 1
 			fi
 			directory="$2"
-			print directory
+			if [ -d $directory ]
+			then
+				printf "Répertoire mis à jour\n"
+			else
+				printf "\e[31mLe répertoire spécifié n'existe pas\n"
+			fi
 		;;	
 		*)
 			printf "$usage\n"
