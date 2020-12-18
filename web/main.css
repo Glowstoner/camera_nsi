@@ -1,0 +1,31 @@
+#mainmenu {
+    
+}
+
+#mainheader {
+
+}
+
+#mainglobal {
+    position: absolute;
+  margin: auto;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 70%;
+  height: 70%;
+}
+
+#maingloballogo {
+    color: green;
+    font-size: 3000%;
+}
+
+#mainframe {
+    text-align: center;
+}
+
+.mainmenuitems {
+    text-align: left;
+}
