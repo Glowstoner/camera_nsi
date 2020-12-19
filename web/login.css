@@ -36,9 +36,7 @@
 }
 
 #main {
-    border: 5px solid white;
     background-color: white;
-    
     display: inline-block;
     vertical-align: middle;
     line-height: 100%;
