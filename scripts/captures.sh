@@ -13,7 +13,8 @@ fname=$(basename -- "$name")
 extension="${fname##*.}"
 fname="${fname%.*}"
 config=1
-configfile=${patha[0]}/captures.config
+#configfile=${patha[0]}/captures.config
+configfile=captures.config
 
 
 errorh() {
@@ -67,24 +68,31 @@ toabsolute() {
 
 config() {
 	printf "1ère utilisation...\n"
-	cp $thispath/$name ${patha[0]}/$fname
-	touch $configfile
+	#cp $thispath/$name ${patha[0]}/$fname
+	#touch $configfile
+	cp $thispath/$name $thispath/test/$name
+	touch $thispath/test/$configfile
 	printf "Dans quel répertoire voulez-vous conserver le fichier log.txt dans lequel vous trouverez les logs d'erreur des captures effectuées ? "
 	read pathlog
 	toabsolute $pathlog l
-	echo "pathlog = $pathlog;" >> $configfile
+	[[ -d $pathlog ]]||sdir $pathlog l
+	echo "pathlog = $pathlog" >> $configfile
 	printf "Le fichier log.txt sera conservé dans $pathlog\n"
 	printf "Dans quel répertoire voulez vous enregistrer les captures qui seront faites ? "
 	read directory
 	toabsolute $directory d
 	if [ ! -d $directory ]
-	then sdir
+	then sdir $directory d
 	fi
-	echo "directory = $directory;" >> $configfile
+	echo "directory = $directory" >> $configfile
 	printf "Les images seront conservées dans $directory\n"
 	printf "Captures peut commencé à être utilisé\n"
 	printf "$usage\n"
 	exit 0
+}
+
+reconfig() {
+	config
 }
 
 pathlog(){
@@ -107,7 +115,7 @@ updatedir() {
 #}
 
 sdir() {
-	printf "$error le répertoire $directory n'existe pas voulez-vous le créer ? O/n "
+	printf "$error le répertoire $1 n'existe pas voulez-vous le créer ? O/n "
 	read create
         while [ "$create" != "O" ] || [ "$create" != "o" ] || [ "$create" != "N" ] || [ "$create" != "n" ]
 		do
@@ -117,9 +125,11 @@ sdir() {
 					then
 						updatedir $1||echo "not update"
 					fi
-					toabsolute $directory d
-					echo "directory = $directory"
-					mkdir $directory
+					case $1 in
+						d) toabsolute $1 d&&echo "$1 = $directory\n"&&mkdir $directory;;
+						l) toabsolute $1 l&&echo "$1 = $pathlog\n"&&mkdir $pathlog;;
+						*) exit 1;;
+					esac
 						if [ "$?" -eq 0 ]
 							then
 									printf "$success répertoire créé et mis à jour\n"
@@ -297,7 +307,7 @@ then
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
-		*)errorh "options inconnues";;
+		*) errorh "options inconnues";;
 	esac
 elif [ "$#" -eq "1" ]
 then
@@ -308,6 +318,7 @@ then
 		log) catlog;;
 		clear) cleard ;;
 		start) debug=0;;
+		reconfig) reconfig;;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -315,16 +326,16 @@ then
 	esac
 fi
 
-path
+#path
 pathlog
-
+[ -f log.txt ]||touch $pathlog/log.txt
 
 if [ "$debug" -eq "0" ]||[ "$debug" -eq "2" ]
 then
 	for i in $(seq 1 1 $nbc)
 	do
 		log
-		camd
+		cam
 		dir
 		fsw
 		if [ $nbc = 1 ]
