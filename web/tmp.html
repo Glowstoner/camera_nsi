@@ -1,0 +1,70 @@
+<div id="maincontainer">
+    <div id="main">
+        <span class="material-icons" id="maingloballogo">check</span><br>
+        <p id="mainctlinfo">En fonctionnement !</p>
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored mainctlbuttons">
+            LANCER
+        </button>
+        <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored mainctlbuttons">
+             STOP  
+        </button>
+    </div>
+</div>
+
+
+
+<div id="mainsearchcaptures">
+    <input type="date" name="birtdate" class="mainsearchctl" placeholder="Sélectionnez une date">
+    <div class="mdl-textfield mdl-js-textfield mainsearchctl">
+        <input class="mdl-textfield__input" type="text" id="mainhourselect">
+        <label class="mdl-textfield__label" for="mainhourselect">Heures</label>
+    </div>
+    <div class="mdl-textfield mdl-js-textfield mainsearchctl">
+        <input class="mdl-textfield__input" type="text" id="mainminuteselect">
+        <label class="mdl-textfield__label" for="mainminuteselect">Minutes</label>
+    </div>
+    <button id="mainsearchbutton" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mainsearchctl">
+        <i class="material-icons">search</i>
+    </button>
+</div>
+<div id="maincaptures">
+    <div class="capture-image mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title mdl-card--expand"></div>
+        <div class="mdl-card__actions">
+          <span class="capture-image__filename">18 décembre 1990</span>
+        </div>
+      </div>
+      <div class="capture-image mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title mdl-card--expand"></div>
+        <div class="mdl-card__actions">
+          <span class="capture-image__filename">19 novembre 2020</span>
+        </div>
+      </div>
+                        
+</div>
+
+<div id="mainsettings">
+    <ul class="demo-list-control mdl-list">
+        <li class="mdl-list__item">
+            <span class="mdl-list__item-primary-content mainsettingstitle">Dossier pour les captures</span>
+            <span class="mdl-list__item-secondary-action">
+                <div class="mdl-textfield mdl-js-textfield">
+                    <input class="mdl-textfield__input" type="text" id="mainsettingspath">
+                    <label class="mdl-textfield__label" for="mainsettingspath">Chemin absolu</label>
+                </div>
+            </span>
+        </li>
+        <li class="mdl-list__item">
+            <span class="mdl-list__item-primary-content mainsettingstitle">Nombre de captures en une minute</span>
+            <span class="mdl-list__item-secondary-action">
+                <div class="mdl-textfield mdl-js-textfield">
+                    <input class="mdl-textfield__input" type="text" pattern="[1-9][0-9]*" id="mainsettingsnumber">
+                    <label class="mdl-textfield__label" for="mainsettingsnumber">Nombre</label>
+                    <span class="mdl-textfield__error">Le champ spécifié est invalide !</span>
+                </div>
+            </span>
+        </li>
+    </ul>
+
+    <button id="mainsettingsbutton" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored">VALIDER</button>
+</div>

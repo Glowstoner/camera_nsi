@@ -9,6 +9,8 @@
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="main.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet"> 
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
@@ -18,7 +20,7 @@
             <div class="mdl-layout__header-row">
                 <div class="mdl-layout-spacer">
                     <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-left">
-                        <span class="mdl-layout-title">Principal</span>
+                        <span class="mdl-layout-title">Paramètres</span>
                     </div>
                 </div>
             </div>
@@ -38,7 +40,14 @@
         <main class="mdl-layout__content">
             <div id="maincontainer">
                 <div id="main">
-                    <span class="material-icons" id="maingloballogo">check</span>
+                    <span class="material-icons" id="maingloballogo">check</span><br>
+                    <p id="mainctlinfo">En fonctionnement !</p>
+                    <button id="mainctlbuttonsstart" class="mdl-button mdl-js-button mdl-js-ripple-effect">
+                        LANCER
+                    </button>
+                    <button id="mainctlbuttonsstop" class="mdl-button mdl-js-button mdl-js-ripple-effect">
+                         STOP  
+                    </button>
                 </div>
             </div>
         </main>
