@@ -8,20 +8,6 @@
     font-family: 'Roboto';
 }
 
-#mainctlbuttonsstop {
-    border: 1px solid red;
-    margin-top: 20px;
-    margin-inline: 30px;
-    font-family: 'Roboto';
-}
-
-#mainctlbuttonsstart {
-    border: 1px solid green;
-    margin-top: 20px;
-    margin-inline: 30px;
-    font-family: 'Roboto';
-}
-
 #main {
     background-color: white;
     display: inline-block;
@@ -36,6 +22,11 @@
 
 #mainsearchbutton {
     background-color: #607d8b;
+}
+
+.mainsearchctl {
+    margin-inline: 30px;
+    margin-top: 20px;
 }
 
 #maincaptures {
@@ -75,6 +66,17 @@
     height: 100%;
 }
 
+#maincaptureserror {
+    color: red;
+    font-size: 20px;
+    font-family: 'Roboto';
+}
+
+#maincaptureserroricon {
+    margin-right: 20px;
+    margin-top: 10px;
+}
+
 #mainsettingsbutton {
     position: absolute;
     bottom: 0;
@@ -101,4 +103,16 @@
     margin-inline: 10vh;
     margin-top: 5vh;
     width: 100px;
+}
+
+#mainsecctl {
+    display: block;
+}
+
+#mainseccaptures {
+    display: none;
+}
+
+#mainsecsettings {
+    display: none;
 }
