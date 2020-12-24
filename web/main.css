@@ -37,7 +37,8 @@
     flex-direction: row;
     flex-wrap: wrap; 
     align-items: center;
-    align-content: flex-start;
+    align-content: center;
+    justify-content: center;
 }
 
 .capture-image.mdl-card {
@@ -67,9 +68,17 @@
 }
 
 #maincaptureserror {
-    color: red;
+    color: rgb(49, 49, 49);
     font-size: 20px;
     font-family: 'Roboto';
+    border: 1px solid red;
+    background-color: rgba(255, 0, 0, 0.3);
+    border-radius: 2px;
+    width: 40%;
+    margin: auto;
+    padding-top: 10px;
+    padding-bottom: 15px;
+    display: none;
 }
 
 #maincaptureserroricon {
@@ -78,8 +87,6 @@
 }
 
 #mainsettingsbutton {
-    position: absolute;
-    bottom: 0;
     margin-bottom: 50px;
 }
 
@@ -97,6 +104,10 @@
 
 .mainmenuitems {
     text-align: left;
+}
+
+.mainsettingstextarea {
+    margin-right: 30px;
 }
 
 .mainctlbuttons {

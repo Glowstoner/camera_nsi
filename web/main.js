@@ -30,8 +30,50 @@ $(document).ready(function (){
             updateTitle("Paramètres");
         }
     });
+
+    $('#mainsearchbutton').click(function (){
+        var date = new Date($('#mainsearchdate').val());
+        console.log("date:" + date);
+        var hours = $('#mainhourselect').val();
+        var minutes = $('#mainminuteselect').val();
+        console.log("hours: " + hours + ", minutes: " + minutes);
+
+        if(isNaN(date)) {
+            showSearchError("Veuillez spécifier une date !");
+        }else if(hours === "" || Number(hours) == NaN) {
+            showSearchError("Veuillez spécifier une heure valide !");
+        }else if(minutes === "" || Number(minutes) == NaN) {
+            showSearchError("Veuillez spécifier une minute valide !");
+        }else {
+            if(Number(hours) >= 24) {
+                showSearchError("Veuillez spécifier une heure inférieure à 24 !");
+            }else if(Number(minutes) >= 60) {
+                showSearchError("Veuillez spécifier une minute inférieure à 60 !");
+            }else {
+                console.log("Valide. recherche ...");
+                $('#maincaptureserror').hide();
+                var data = {message: 'Recherche en cours ...', timeout: 2000};
+                document.querySelector("#maincapturesloading").MaterialSnackbar.showSnackbar(data);
+            }
+        }
+    });
+
+    $('#mainsettingsbutton').click(function (){
+        var data = {message: 'Chargement ...', timeout: 1000};
+        document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
+    });
+
+    $('#mainsearchbutton').click(function (){
+        
+    });
 });
 
 function updateTitle(title) {
     $("#maintitle").text(title);
+}
+
+function showSearchError(message) {
+    var errorMessage = $('#maincaptureserror');
+    errorMessage.html("<span id=\"maincaptureserroricon\" class=\"material-icons\">error</span>"+message);
+    errorMessage.show();
 }
