@@ -1,16 +1,10 @@
 <?php
-$TOKENS_EXPIRE = 5 * 60;
+$TOKENS_EXPIRE = 30;
 $TOKENS_PATH = "tokens.dat";
 $PASSWD = "test";
 
-function processLoginJSON($sucess, $valid) {
+function processLogin($sucess) {
     $ret = new stdClass();
-    if(!$valid) {
-        $ret->valid = FALSE;
-        $ret->sucess = FALSE;
-        return json_encode($ret);
-    }
-
     $ret->valid = TRUE;
     if($sucess) {
         $ret->sucess = TRUE;
@@ -19,7 +13,7 @@ function processLoginJSON($sucess, $valid) {
         $ret->sucess = FALSE;
     }
 
-    return json_encode($ret);
+    echo json_encode($ret);
 }
 
 function processAutologin() {
@@ -29,15 +23,23 @@ function processAutologin() {
     return json_encode($ret);
 }
 
-function processError() {
-    echo processLoginJSON(FALSE, FALSE);
+function processError($valid) {
+    $ret = new stdClass();
+    $ret->valid = $valid;
+    $ret->sucess = FALSE;
+    echo json_encode($ret);
 }
 
 function writeTokenDataStorage($data) {
-    file_put_contents($TOKENS_PATH, $data, FILE_APPEND);
+    global $TOKENS_PATH;
+    $handle = fopen($TOKENS_PATH, "w");
+    fwrite($handle, $data);
+    fclose($handle);
 }
 
 function readTokenDataStorage() {
+    global $TOKENS_PATH;
+    if(filesize($TOKENS_PATH) == 0) return "";
     $handle = fopen($TOKENS_PATH, "r");
     $data = fread($handle, filesize($TOKENS_PATH));
     fclose($handle);
@@ -45,14 +47,11 @@ function readTokenDataStorage() {
 }
 
 function writeTokenStorage($token) {
+    global $TOKENS_PATH;
     if(!file_exists($TOKENS_PATH)) {
         writeTokenDataStorage($token . "\n");
-        echo "Existe po\n";
     }else {
-        echo "Existe oui oui\n";
         $olddata = readTokenDataStorage();
-        echo $olddata;
-        echo "\n------------------------------\n";
         $data = $olddata . $token . "\n";
         echo $data;
         writeTokenDataStorage($data);
@@ -60,6 +59,7 @@ function writeTokenStorage($token) {
 }
 
 function readTokenStorage() {
+    global $TOKENS_PATH;
     if(file_exists($TOKENS_PATH)) {
         $data = readTokenDataStorage();
         return explode("\n", $data);
@@ -80,6 +80,7 @@ function actionToken($token) {
     $data = "";
     $tokens = readTokenStorage();
     foreach($tokens as &$tok) {
+        if(empty($tok)) continue;
         $ptok = explode("-", $tok);
         if($ptok[0] === $token) {
             $data .= (formatTokenStorage($token) . "\n");
@@ -92,25 +93,38 @@ function actionToken($token) {
 }
 
 function removeInvalidTokens() {
+    global $TOKENS_EXPIRE;
     $data = "";
     $tokens = readTokenStorage();
+    print_r($tokens);
+    if(empty($tokens)) return;
     foreach($tokens as &$tok){
+        if(empty($tok)) continue;
         $ptok = explode("-", $tok);
-        if($ptok[1] <= (round(microtime(true) * 1000) + 1000 * $TOKENS_EXPIRE)) {
-            $data .= $tok;
+        $rest = ($ptok[1] + 1000 * $TOKENS_EXPIRE) - round(microtime(true) * 1000);
+        if($rest >= 0) {
+            $data .= ($tok . "\n");
         }
     }
 
-    writeTokenStorage($data);
+    writeTokenDataStorage($data);
 }
 
 function checkToken($token) {
+    if(tokenExists($token)) {
+        actionToken($token);
+        return TRUE;
+    }else {
+        return FALSE;
+    }
+}
+
+function tokenExists($token) {
     removeInvalidTokens();
     $tokens = readTokenStorage();
     foreach($tokens as &$tok) {
         $ptok = explode("-", $tok);
         if($ptok[0] === $token) {
-            actionToken($token);
             return TRUE;
         }
     }
@@ -119,7 +133,11 @@ function checkToken($token) {
 }
 
 function addToken() {
-    $newtoken = getNewToken();
+    $newtoken = "";
+    do {
+        $newtoken = getNewToken();
+    } while(tokenExists($newtoken));
+
     writeTokenStorage(formatTokenStorage($newtoken));
     return $newtoken;
 }
@@ -127,22 +145,22 @@ function addToken() {
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     if(count($_POST) == 1) {
         if(isset($_POST["passwd"])) {
-            echo processLoginJSON((htmlentities($_POST["passwd"]) == $PASSWD), TRUE);
+            processLogin((htmlentities($_POST["passwd"]) == $PASSWD));
         }else {
-            processError();
+            processError(FALSE);
         }
     }else if(count($_POST) == 2) {
         if(isset($_POST["autologin"]) && isset($_POST["token"])) {
             if(checkToken(htmlentities($_POST["token"]))) {
                 echo processAutologin();
             }else {
-                processError();
+                processError(TRUE);
             }
         }else {
-            processError();
+            processError(FALSE);
         }
     }else {
-        processError();
+        processError(FALSE);
     }
 }
 ?>
