@@ -1,16 +1,16 @@
 <?php
-$TOKENS_EXPIRE = 30;
+$TOKENS_EXPIRE = 1 * 60;
 $TOKENS_PATH = "tokens.dat";
 $PASSWD = "test";
 
-function processLogin($sucess) {
+function processLogin($success) {
     $ret = new stdClass();
     $ret->valid = TRUE;
-    if($sucess) {
-        $ret->sucess = TRUE;
+    if($success) {
+        $ret->success = TRUE;
         $ret->token = addToken();
     }else {
-        $ret->sucess = FALSE;
+        $ret->success = FALSE;
     }
 
     echo json_encode($ret);
@@ -19,14 +19,14 @@ function processLogin($sucess) {
 function processAutologin() {
     $ret = new stdClass();
     $ret->valid = TRUE;
-    $ret->sucess = TRUE;
+    $ret->success = TRUE;
     return json_encode($ret);
 }
 
 function processError($valid) {
     $ret = new stdClass();
     $ret->valid = $valid;
-    $ret->sucess = FALSE;
+    $ret->success = FALSE;
     echo json_encode($ret);
 }
 
@@ -53,7 +53,6 @@ function writeTokenStorage($token) {
     }else {
         $olddata = readTokenDataStorage();
         $data = $olddata . $token . "\n";
-        echo $data;
         writeTokenDataStorage($data);
     }
 }
@@ -96,7 +95,6 @@ function removeInvalidTokens() {
     global $TOKENS_EXPIRE;
     $data = "";
     $tokens = readTokenStorage();
-    print_r($tokens);
     if(empty($tokens)) return;
     foreach($tokens as &$tok){
         if(empty($tok)) continue;
@@ -142,6 +140,49 @@ function addToken() {
     return $newtoken;
 }
 
+function isLogged() {
+    return checkToken(htmlentities($_POST["token"]));
+}
+
+function serviceControlRequestValid($data) {
+    $sandata = htmlentities($data);
+    if($sandata === "start") {
+        return 1;
+    }else if($sandata === "stop") {
+        return 0;
+    }else {
+        return -1;
+    }
+}
+
+function serviceAction($action) {
+    if($action) {
+        return serviceStart();
+    }else {
+        return serviceStop();
+    }
+}
+
+function serviceStart() {
+    //Start service
+    //echo "START\n";
+    return TRUE; //tmp value
+}
+
+function serviceStop() {
+    //Stop service
+    //echo "STOP\n";
+    return FALSE; //tmp value
+}
+
+function processControl($success) {
+    $ret = new stdClass();
+    $ret->valid = TRUE;
+    $ret->success = TRUE;
+    $ret->operationSuccess = $success;
+    echo json_encode($ret);
+}
+
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     if(count($_POST) == 1) {
         if(isset($_POST["passwd"])) {
@@ -151,10 +192,21 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }else if(count($_POST) == 2) {
         if(isset($_POST["autologin"]) && isset($_POST["token"])) {
-            if(checkToken(htmlentities($_POST["token"]))) {
+            if(isLogged()) {
                 echo processAutologin();
             }else {
                 processError(TRUE);
+            }
+        }else if(isset($_POST["servicectl"]) && isset($_POST["token"])) {
+            $ctlreq = serviceControlRequestValid($_POST["servicectl"]);
+            if($ctlreq != -1) {
+                if(isLogged()) {
+                    processControl(serviceAction($ctlreq));
+                }else {
+                    processError(TRUE);
+                }
+            }else {
+                processError(FALSE);
             }
         }else {
             processError(FALSE);

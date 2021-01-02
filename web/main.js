@@ -1,5 +1,8 @@
 $(document).ready(function (){
     var asec = "#mainsecctl";
+    var token = getToken();
+    
+    checkToken(token);
 
     $('#mainclickcontrol').click(function (){
         if(asec != "#mainsecctl") {
@@ -40,9 +43,9 @@ $(document).ready(function (){
 
         if(isNaN(date)) {
             showSearchError("Veuillez spécifier une date !");
-        }else if(hours === "" || Number(hours) == NaN) {
+        }else if(hours === "" || isNaN(Number(hours))) {
             showSearchError("Veuillez spécifier une heure valide !");
-        }else if(minutes === "" || Number(minutes) == NaN) {
+        }else if(minutes === "" || isNaN(Number(minutes))) {
             showSearchError("Veuillez spécifier une minute valide !");
         }else {
             if(Number(hours) >= 24) {
@@ -66,7 +69,48 @@ $(document).ready(function (){
     $('#mainsearchbutton').click(function (){
         
     });
+
+    $('#mainctlstart').click(function (){
+        controlService(true, token);
+    });
+
+    $('#mainctlstop').click(function (){
+        controlService(false, token);
+    })
 });
+
+function controlService(start, sessiontoken) {
+    var text = (start) ? "Lancement du service ..." : "Arrêt du service ...";
+    var data = {message: text, timeout: 2000};
+    document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+    $.post("api.php", {servicectl: (start) ? "start" : "stop", token: sessiontoken}, function(data, status) {
+        console.log(status);
+        if(status == "success") {
+            console.log(data);
+            var ret = JSON.parse(data);
+            console.log(ret);
+            if(ret.valid && ret.success) {
+                if(ret.operationSuccess) {
+                    console.log("Requête réalisée avec succès.");
+                    if(start) {
+                        $('#maingloballogo').text("check");
+                        $('#maingloballogo').css("color", "green");
+                        $('#mainctlinfo').text("En fonctionnement");
+                    }else {
+                        $('#maingloballogo').text("clear");
+                        $('#maingloballogo').css("color", "red");
+                        $('#mainctlinfo').text("À l'arrêt");
+                    }
+                }else {
+                    console.log("Problème technique !");
+                    ooops();
+                }
+            }else {
+                reconnect();
+            }
+        }
+    });
+}
 
 function updateTitle(title) {
     $("#maintitle").text(title);
@@ -76,4 +120,46 @@ function showSearchError(message) {
     var errorMessage = $('#maincaptureserror');
     errorMessage.html("<span id=\"maincaptureserroricon\" class=\"material-icons\">error</span>"+message);
     errorMessage.show();
+}
+
+function getToken() {
+    const regex = /(?<=main\.html\?)tok_[0-9a-f]{13}/gm;
+    var arr = document.URL.match(regex);
+    if(arr != null) {
+        if(arr.length == 1) {
+            return arr[0];
+        }else {
+            reconnect();
+            return null;
+        }
+    }else {
+        reconnect();
+        return null;
+    }
+}
+
+function checkToken(tokentest) {
+    $.post("api.php", {autologin: 0, token: tokentest}, function(data, status) {
+        console.log(status);
+        if(status == "success") {
+            console.log(data);
+            var ret = JSON.parse(data);
+            console.log(ret);
+            if(ret.valid && ret.success) {
+                console.log("Vérification main réussie !");
+            }else {
+                console.log("Vérification main échouée !");
+                reconnect();
+            }
+        }
+    });
+}
+
+function reconnect() {
+    console.log("Redirection.");
+    window.location.href = "login.html?fromage";
+}
+
+function ooops() {
+    window.location.href = "login.html?ooops";
 }
