@@ -36,7 +36,8 @@ $(document).ready(function (){
 
     $('#mainsearchbutton').click(function (){
         var date = new Date($('#mainsearchdate').val());
-        console.log("date:" + date);
+        var fdate = date.getDate() + "/" + (date.getMonth() + 1)+ "/" + date.getFullYear();
+        console.log("date:" + fdate);
         var hours = $('#mainhourselect').val();
         var minutes = $('#mainminuteselect').val();
         console.log("hours: " + hours + ", minutes: " + minutes);
@@ -157,9 +158,9 @@ function checkToken(tokentest) {
 
 function reconnect() {
     console.log("Redirection.");
-    window.location.href = "login.html?fromage";
+    window.location.href = "index.html?fromage";
 }
 
 function ooops() {
-    window.location.href = "login.html?ooops";
+    window.location.href = "index.html?ooops";
 }
