@@ -38,20 +38,20 @@ $(document).ready(function (){
         var date = new Date($('#mainsearchdate').val());
         var fdate = date.getDate() + "/" + (date.getMonth() + 1)+ "/" + date.getFullYear();
         console.log("date:" + fdate);
-        var hours = $('#mainhourselect').val();
-        var minutes = $('#mainminuteselect').val();
+        var hours = Number($('#mainhourselect').val());
+        var minutes = Number($('#mainminuteselect').val());
         console.log("hours: " + hours + ", minutes: " + minutes);
 
         if(isNaN(date)) {
             showSearchError("Veuillez spécifier une date !");
-        }else if(hours === "" || isNaN(Number(hours))) {
+        }else if(hours === "" || isNaN(hours) || !Number.isInteger(hours)) {
             showSearchError("Veuillez spécifier une heure valide !");
-        }else if(minutes === "" || isNaN(Number(minutes))) {
+        }else if(minutes === "" || isNaN(minutes) || !Number.isInteger(minutes)) {
             showSearchError("Veuillez spécifier une minute valide !");
         }else {
-            if(Number(hours) >= 24) {
+            if(hours >= 24) {
                 showSearchError("Veuillez spécifier une heure inférieure à 24 !");
-            }else if(Number(minutes) >= 60) {
+            }else if(minutes >= 60) {
                 showSearchError("Veuillez spécifier une minute inférieure à 60 !");
             }else {
                 console.log("Valide. recherche ...");
@@ -66,7 +66,9 @@ $(document).ready(function (){
                     minute: minutes
                 };
 
-                controlCaptures(JSON.stringify(jdate), token);
+                let jdateenc = JSON.stringify(jdate);
+                console.log("JSON envoyé : " + jdateenc);
+                controlCaptures(jdateenc, token);
             }
         }
     });
@@ -132,7 +134,7 @@ function controlCaptures(date, sessiontoken) {
                     $('#maincaptures').empty();
                     if(afiles.length == 0) {
                         console.log("Aucun résultat trouvé.");
-                        var data = {message: 'Auncun résultat trouvé', timeout: 2000};
+                        var data = {message: 'Aucun résultat trouvé', timeout: 2000};
                         document.querySelector("#maincapturesloading").MaterialSnackbar.showSnackbar(data);
                         displayNotFound();
                     }else {
@@ -162,8 +164,20 @@ function displayTiles(files) {
         $('#maincaptures').append('<a href=\"' + element + '\">\
         <div class=\"capture-image mdl-card mdl-shadow--2dp\" style="background: url(\'' + element + '\') center / cover;\">\
         <div class=\"mdl-card__title mdl-card--expand\"></div><div class=\"mdl-card__actions\"><span class=\"capture-image__filename\">\
-        ' + filename + '</span></div></div></a>');
+        ' + getDateFormattedFromFilename(filename) + '</span></div></div></a>');
     });
+}
+
+function getDateFormattedFromFilename(filename) {
+    let parts = filename.split(".");
+    let year = parts[0];
+    let day = parts[2];
+    let hour = parts[3];
+    let minute = parts[4];
+    let second = parts[5];
+    let months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    let month = months[parts[1] - 1];
+    return day + " " + month + " " + year + " " + hour + ":" + minute + ":" + second;
 }
 
 function displayNotFound() {

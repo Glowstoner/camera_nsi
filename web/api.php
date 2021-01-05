@@ -191,11 +191,11 @@ function capturesSearchRequestValid($data) {
     $sandata = $data; //TODO change sanitazer, potential JSON injection
     $jdata = json_decode($sandata);
     if($jdata == NULL) return NULL;
-    if($jdata->year < 0) return NULL;
-    if($jdata->month <= 0 || $jdata->month > 12) return NULL;
-    if($jdata->day <= 0 || $jdata->day > 31) return NULL;
-    if($jdata->hour < 0 || $jdata->hour > 23) return NULL;
-    if($jdata->minute < 0 || $jdata->minute > 59) return NULL;
+    if(!is_int($jdata->year) || $jdata->year < 0) return NULL;
+    if(!is_int($jdata->month) || $jdata->month <= 0 || $jdata->month > 12) return NULL;
+    if(!is_int($jdata->day) || $jdata->day <= 0 || $jdata->day > 31) return NULL;
+    if(!is_int($jdata->hour) || $jdata->hour < 0 || $jdata->hour > 23) return NULL;
+    if(!is_int($jdata->minute) || $jdata->minute < 0 || $jdata->minute > 59) return NULL;
     return $jdata;
 }
 
