@@ -56,8 +56,17 @@ $(document).ready(function (){
             }else {
                 console.log("Valide. recherche ...");
                 $('#maincaptureserror').hide();
-                var data = {message: 'Recherche en cours ...', timeout: 2000};
+                var data = {message: 'Recherche en cours ...', timeout: 1000};
                 document.querySelector("#maincapturesloading").MaterialSnackbar.showSnackbar(data);
+                var jdate = {
+                    year: date.getFullYear(),
+                    month: (date.getMonth() + 1),
+                    day: date.getDate(),
+                    hour: hours,
+                    minute: minutes
+                };
+
+                controlCaptures(JSON.stringify(jdate), token);
             }
         }
     });
@@ -65,10 +74,6 @@ $(document).ready(function (){
     $('#mainsettingsbutton').click(function (){
         var data = {message: 'Chargement ...', timeout: 1000};
         document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
-    });
-
-    $('#mainsearchbutton').click(function (){
-        
     });
 
     $('#mainctlstart').click(function (){
@@ -113,8 +118,59 @@ function controlService(start, sessiontoken) {
     });
 }
 
-function updateTitle(title) {
-    $("#maintitle").text(title);
+function controlCaptures(date, sessiontoken) {
+    $.post("api.php", {captures: date, token: sessiontoken}, function(data, status) {
+        console.log(status);
+        if(status == "success") {
+            console.log(data);
+            var ret = JSON.parse(data);
+            console.log(ret);
+            if(ret.valid && ret.success) {
+                if(ret.operationSuccess) {
+                    console.log("Requête réalisée avec succès.");
+                    let afiles = ret.files;
+                    $('#maincaptures').empty();
+                    if(afiles.length == 0) {
+                        console.log("Aucun résultat trouvé.");
+                        var data = {message: 'Auncun résultat trouvé', timeout: 2000};
+                        document.querySelector("#maincapturesloading").MaterialSnackbar.showSnackbar(data);
+                        displayNotFound();
+                    }else {
+                        var text = (afiles.length == 1) ? "1 résultat trouvé" : afiles.length + " résultats trouvés";
+                        var data = {message: text, timeout: 2000};
+                        document.querySelector("#maincapturesloading").MaterialSnackbar.showSnackbar(data);
+                        afiles.forEach(element => {
+                            console.log("Fichier reçu : " + element);
+                        });
+                        displayTiles(afiles);
+                    }
+                }else {
+                    console.log("Problème technique !");
+                    ooops();
+                }
+            }else {
+                reconnect();
+            }
+        }
+    });
+}
+
+function displayTiles(files) {
+    files.forEach(element => {
+        let filename = element.replace(/^.*[\\\/]/, '');
+        console.log("Affichage de " + filename + " ...");
+        $('#maincaptures').append('<a href=\"' + element + '\">\
+        <div class=\"capture-image mdl-card mdl-shadow--2dp\" style="background: url(\'' + element + '\') center / cover;\">\
+        <div class=\"mdl-card__title mdl-card--expand\"></div><div class=\"mdl-card__actions\"><span class=\"capture-image__filename\">\
+        ' + filename + '</span></div></div></a>');
+    });
+}
+
+function displayNotFound() {
+    console.log("Affichage bannière aucun résultat.");
+    $('#maincaptures').append('<div id=\"maincaptures\"><div id=\"maincapturenotfound\">\
+        <span id=\"maincapturenotfoundicon\" class=\"material-icons\">find_in_page</span>\
+        <p id=\"maincapturenotfoundtext\">Aucun résultat</p></div></div>');
 }
 
 function showSearchError(message) {

@@ -1,7 +1,7 @@
 <?php
-$TOKENS_EXPIRE = 2 * 60;
-$TOKENS_PATH = "tokens.dat";
-$CAPTURES_PATH = "captures";
+$TOKENS_EXPIRE = 3 * 60;
+$TOKENS_PATH = "/var/www/html/data/tokens.dat";
+$CAPTURES_PATH = "/var/www/html/data/captures";
 $DELIVERY_PATH = "livraison";
 $PASSWD = "test";
 
@@ -201,7 +201,7 @@ function capturesSearchRequestValid($data) {
 
 function searchCapturesByDate($date) {
     global $CAPTURES_PATH;
-    $cpath = $CAPTURES_PATH."/".$date->year.".".$date->month.".".$date->day.".".$date->hour.".".$date->minute;
+    $cpath = $CAPTURES_PATH."/".$date->year.".".$date->month.".".$date->day.".".$date->hour.".".$date->minute.".";
     $fc = array();
     foreach(glob($cpath."*") as $filename) {
         array_push($fc, $filename);
