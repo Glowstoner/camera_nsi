@@ -1,5 +1,5 @@
 <?php
-$TOKENS_EXPIRE = 3 * 60;
+$TOKENS_EXPIRE = 5 * 60;
 $TOKENS_PATH = "/var/www/html/data/tokens.dat";
 $CAPTURES_PATH = "/var/www/html/data/captures";
 $DELIVERY_PATH = "livraison";
@@ -169,14 +169,17 @@ function serviceAction($action) {
 
 function serviceStart() {
     //Start service
-    //echo "START\n";
-    return TRUE; //tmp value
+    $out = shell_exec("echo \$PATH; echo \$USER");
+    $output = shell_exec("captures start");
+    echo $out;
+    return TRUE;
 }
 
 function serviceStop() {
     //Stop service
-    //echo "STOP\n";
-    return TRUE; //tmp value
+    $output = shell_exec("captures stop");
+    echo $output;
+    return TRUE;
 }
 
 function processControl($success) {
