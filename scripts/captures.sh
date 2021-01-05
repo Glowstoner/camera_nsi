@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n-d,--debug exécute et affiche toutes les logs\nlog : cat le fichier log.txt\get prend une capture\nclear :  supprime touts les fichiers du répertoire d'enregistrement\n-h,--help display informations")
+usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n-d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
 error="\e[31merreur :\e[39m"
 success="\e[32msuccés :\e[39m"
 phelp=": voir --help pour plus d'informations\n"
@@ -11,15 +11,10 @@ fname=$(basename -- "$name")
 extension="${fname##*.}"
 fname="${fname%.*}"
 debug=0
-#config=1
-#configfile=${patha[0]}/captures.config
-#configfile="/home/esther/Documents/fswebcam/captures.config"
-#configfile=""
-#run=$(cat $configfile|grep -P -o "(?<=run = )\d")
-#nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\S*")
+take=-1
 
 errorh() {
-	printf "$error $1 $pheln"
+	printf "$error $1 $phelp"
 	exit 1
 }
 
@@ -101,6 +96,18 @@ stop() {
 #start() {
     #sudo sed -i "s/$(grep -P -o '(?<=run = )\d' $configfile)/0/g" $configfile
 #}
+
+take() {
+	for i in $(seq 1 1 $1)
+		do
+		log
+		cam
+		dir
+		fsw
+		fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txti
+	done
+	printf "$success les captures ont été effectuées\n"
+}
 
 cleard() {
 	if [ ! -e $configfile ]
@@ -201,7 +208,6 @@ dir
 
 [ ! -f log.txt ]&&touch $pathlog/log.txt
 
-
 if [ "$#" -gt "2" ]||[ "$#" -eq "0" ]
 then
 	printf "$usage\n"
@@ -210,25 +216,33 @@ elif [[ "$#" -gt "1" ]]
 then
 	case  $1 in
 		get) case $2 in 
-             capturespath) printf "$pathdirectory"
+             capturespath) printf "$directory\n"
              ;;
-             logpath) printf "$pathlog"
+             logpath) printf "$pathlog\n"
              ;;
-             nbcaptures) printf "$nbc"
+             nbcaptures) printf "$nbc\n"
              ;;
              *) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
              esac
              ;;
         take)
+			intp='^[+]?[0-9]+$'
+			float='^[+]?[-]?[0-9]+([.,][0-9]+)?$'
+			intn='^[-][0-9]+([.][0-9]+)?$'
             if [[ "$2" == "one" ]]
             then
                 fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt&&printf "$success capture prise et enregistrée\n"&&exit 0||errore "Un problème est survenu voyez -d ou --debug\n"
-            else
-                case $2 in
-                    '^[+]?[0-9]+$') nbc = $2; debug=0;;
-                    '^[+]?[0-9]+([.,][0-9]+)?$') errore "Le nombre de captures par minute doit être un nombre entier";;
-                    '^[-][0-9]+([.][0-9]+)?$') errore "Le nombre de captures par minute doit être positif";;
-                esac
+			elif [[ "$2" =~ $intp ]] 
+			then
+					take $2
+			elif [[ "$2" =~ $intn ]]
+			then
+				errore "Le nombre de captures par minute doit être positif"
+			elif [[ "$2" =~ $float ]]
+			then
+				errore "Le nombre de captures par minute doit être un nombre entier"
+			else
+				errore "Usage : captures take <nombre de captures par minutes>"
             fi;;
 		log) errore "Usage : captures log : lis le fichier log.txt";;
 		clear) errore "Usage : captures clear : supprime toutes les fichiers du repertoire où sont stockées les captures";;
