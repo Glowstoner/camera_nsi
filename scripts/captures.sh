@@ -4,18 +4,19 @@ usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des ca
 error="\e[31merreur :\e[39m"
 success="\e[32msuccés :\e[39m"
 phelp=": voir --help pour plus d'informations\n"
-nbc=59
-debug=2
 thispath=$(pwd)
 path=$PATH;IFS=': ' read -r -a patha <<< $path
 name=`basename "$0"`
 fname=$(basename -- "$name")
 extension="${fname##*.}"
 fname="${fname%.*}"
+debug=0
 #config=1
-configfile=${patha[0]}/captures.config
-#configfile="$PWD/captures.config"
-run=1
+#configfile=${patha[0]}/captures.config
+#configfile="/home/esther/Documents/fswebcam/captures.config"
+#configfile=""
+#run=$(cat $configfile|grep -P -o "(?<=run = )\d")
+#nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\S*")
 
 errorh() {
 	printf "$error $1 $pheln"
@@ -32,13 +33,12 @@ toabsolute() {
 	if  [[ $1 == "~/"* ]]
 	then
 		case $2 in
-		l)  pathlog=$( echo $1|sed 's/~//')
+		l)  pathlog=$( echo $1|sed 's/~//' )
 			pathlog="/home/$(echo $USER)$pathlog"
-			#[ -e $pathlog ]
 			;;
 		d)	directory=$( echo "$1"|tr "~" "/home" )
 			directory="/home/$(echo $USER)$directory";;
-		*) exit 1;;
+		*)  exit 1;;
 		esac
 	else
 		case $2 in
@@ -49,10 +49,9 @@ toabsolute() {
 	fi
 }
 
-
 path() {
-	for i in $(seq 0 1 ${#patha[@]})
-	do 
+	for i in $(seq 0 ${#patha[@]})
+	do
 		if [[ "${patha[$i]}" = "$thispath" ]]||[ -n "$(find "${patha[$i]}/$fname" 2> /dev/null)" ]
 		then
 			return 0	
@@ -61,16 +60,30 @@ path() {
 	cp $thispath/$name ${patha[0]}/$fname
 }
 
+configfile() {
+    if [ ! -e /etc/captures/captures.config ]
+    then
+        errore "le fichier /etc/captures/captures.config n'existe pas"
+    fi
+    configfile="/etc/captures/captures.config"
+}
+
 pathlog() {
     pathlog=$(cat $configfile|grep -P -o "(?<=pathlog = )\S*")
+	toabsolute $pathlog l
 }
 
 pathdirectory() {
     directory=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
+	toabsolute $directory d
 }
 
 nbc() {
-    nbc=$(cat $configfile|grep -P -p "(?<=nbc = )\S*")
+    nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\S*")
+}
+
+run() {
+    run=$(cat $configfile|grep -P -o "(?<=run = )\d")
 }
 
 reconfig() {
@@ -80,6 +93,14 @@ reconfig() {
     run=$(cat $configfile|grep -P -o "(?<=run = )\d*")
 }
 
+stop() {
+    #sudo sed -i "s/$(grep -P -o '(?<=run = )\d' $configfile)/1/g" $configfile
+    ps axf | grep captures | grep -v grep | awk '{print "kill -9 " $1}' | sh
+}
+
+#start() {
+    #sudo sed -i "s/$(grep -P -o '(?<=run = )\d' $configfile)/0/g" $configfile
+#}
 
 cleard() {
 	if [ ! -e $configfile ]
@@ -92,7 +113,7 @@ cleard() {
 		then
 			errore "$directory n'existe pas\n"
 		else
-			rm -r $directory/* &&printf "$success repertoire $directory vidé\n"&&exit 0
+			rm -rf $directory/* &&printf "$success repertoire $directory vidé\n"&&exit 0
 		fi
 	fi
 }
@@ -108,10 +129,9 @@ cam() {
 camd() {
 	if [ ! -e /dev/video0 ]
         then
-        printf "$error $(date '+%H:%M:%S') -> /dev/video0 n'existe pas\n"
-        exit 1
+            printf "$error $(date '+%H:%M:%S') -> /dev/video0 n'existe pas\n"
+            exit 1
         fi
-
 }
 
 dir() {
@@ -172,9 +192,10 @@ fswd() {
 }
 
 path
-[ ! -e $configfile ]&&errore "$configfile n'existe pas"
+configfile
 pathlog
 log
+nbc
 pathdirectory
 dir
 
@@ -203,8 +224,8 @@ then
             then
                 fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt&&printf "$success capture prise et enregistrée\n"&&exit 0||errore "Un problème est survenu voyez -d ou --debug\n"
             else
-                case $2 in 
-                    '^[+]?[0-9]+$') nbc = $2;;
+                case $2 in
+                    '^[+]?[0-9]+$') nbc = $2; debug=0;;
                     '^[+]?[0-9]+([.,][0-9]+)?$') errore "Le nombre de captures par minute doit être un nombre entier";;
                     '^[-][0-9]+([.][0-9]+)?$') errore "Le nombre de captures par minute doit être positif";;
                 esac
@@ -216,14 +237,17 @@ then
 		start) 
 			if [ "$#" -gt "2" ]
 			then
-				errorh "trops d'options"
+				errorh "trop d'options"
 			else
 				case $2 in
-					-d|--debug)debug=1;;
+					-d|--debug)debug=1
+                            #start
+                            run;;
 					*) errorh "Trop d'options";;
 				esac
 			fi
             ;;
+        stop) errore "Usage : captures stop : arrête de prendre des captures";;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -236,45 +260,51 @@ then
 		set) errore "Usage captures -s, --set <repertoire>";;
 		log) less $pathlog/log.txt;;
 		clear) cleard ;;
-		start) debug=0;;
+		start)
+		     #start
+            run;;
+        stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
 		reconfig) reconfig;;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
-		*)errorh "option inconnue";;
+		*) errorh "option inconnue";;
 	esac
 fi
 
-if [ "$debug" -eq "0" ]||[ "$debug" -eq "2" ]
+if [ "$debug" -eq "0" ]
 then
-    #while [[ "$run" == "0" ]]
-    #do
-        for i in $(seq 1 1 $nbc)
-        do
+    while [[ "$run" == "0" ]]
+    do
+        #for i in $(seq 1 1 $nbc)
+        #do
         log
         cam
         dir
         fsw
-        fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg& 2>>$pathlog/log.txt
+        fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
         sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
-        done
-    #done
+        if [[ "$run" == "1" ]]
+        then
+            break
+        fi
+        #done
+    done
 else
-    #while [[ "$run" == "0" ]]
-    #do
-        for i in $(seq 1 1 $nbc)
+    while [[ "$run" == "0" ]]
+    do
+        #for i in $(seq 1 1 $nbc)
             #do
-            echo "------------i = $i--------------"
+            #echo "------------i = $i--------------"
             logd&& printf "répertoire log = $pathlog\n"
             camd&& printf "/dev/video0 trouvé\n"
             dird&& printf "repertoire  $directory existe\n"
             fswd&& printf "fswebcam installé\n"
-            fswebcam --no-banner -q  $directory/$(date '+%H:%M:%S').jpg&
+            fswebcam --no-banner -q  $directory/$(date '+%Y.%m.%d.%H.%M.%S')jpg&
             printf "$(ls -l $directory|wc -l) images dans $directory\n"
-            printf "$success $(date '+%H:%M:%S') -> capture prise\n"
+            printf "$success $(date '+%Hh%Mm%Ss') -> capture prise\n"
             sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
-            run
         #done
-    #done
+    done
 fi
