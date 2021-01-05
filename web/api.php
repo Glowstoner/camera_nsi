@@ -194,18 +194,45 @@ function capturesSearchRequestValid($data) {
     if(!is_int($jdata->year) || $jdata->year < 0) return NULL;
     if(!is_int($jdata->month) || $jdata->month <= 0 || $jdata->month > 12) return NULL;
     if(!is_int($jdata->day) || $jdata->day <= 0 || $jdata->day > 31) return NULL;
-    if(!is_int($jdata->hour) || $jdata->hour < 0 || $jdata->hour > 23) return NULL;
-    if(!is_int($jdata->minute) || $jdata->minute < 0 || $jdata->minute > 59) return NULL;
+    if(!is_int($jdata->hour) || $jdata->hour < -1 || $jdata->hour > 23) return NULL;
+    if(!is_int($jdata->minute) || $jdata->minute < -1 || $jdata->minute > 59) return NULL;
     return $jdata;
 }
 
 function searchCapturesByDate($date) {
     global $CAPTURES_PATH;
-    $cpath = $CAPTURES_PATH."/".$date->year.".".$date->month.".".$date->day.".".$date->hour.".".$date->minute.".";
+    
+    $vmonth = ($date->month < 10) ? "0".$date->month : $date->month;
+    $vday = ($date->day < 10) ? "0".$date->day : $date->day;
+    $vhour = ($date->hour < 10) ? "0".$date->hour : $date->hour;
+    $vminute = ($date->minute < 10) ? "0".$date->minute : $date->minute;
+
+    $cpath = "/".str_replace("/", "\/", $CAPTURES_PATH)."\/".$date->year."\.".$vmonth."\.".$vday."\.";
     $fc = array();
-    foreach(glob($cpath."*") as $filename) {
-        array_push($fc, $filename);
+
+    if($date->hour == -1) {
+        $cpath .= "\d+\.";
+    }else{
+        $cpath .= $vhour."\.";
     }
+
+    if($date->minute == -1) {
+        $cpath .= "\d+\.";
+    }else {
+        $cpath .= $vminute."\.";
+    }
+
+    $cpath .= "*/m";
+
+    foreach(glob($CAPTURES_PATH."/*") as $filename) {
+        $r = preg_match($cpath, $filename);
+        if($r === FALSE) {
+            return FALSE;
+        }else if($r === 1) {
+            array_push($fc, $filename);
+        }
+    }
+
     return $fc;
 }
 
@@ -248,6 +275,7 @@ function removeOldDeliveries($token) {
 function capturesAction($folder, $data) {
     global $CAPTURES_PATH;
     $fc = searchCapturesByDate($data);
+    if($fc === FALSE) return FALSE;
     $cutlen = strlen($CAPTURES_PATH);
     $files = array();
     foreach($fc as $filecapture) {
@@ -258,13 +286,15 @@ function capturesAction($folder, $data) {
     return $files;
 }
 
-function processCaptures($folder, $files) {
+function processCaptures($folder, $files, $error) {
     $ret = new stdClass();
     $ret->valid = TRUE;
     $ret->success = TRUE;
-    $ret->operationSuccess = TRUE;
-    $ret->deliveryPath = $folder;
-    $ret->files = $files;
+    $ret->operationSuccess = !$error;
+    if(!$error) {
+        $ret->deliveryPath = $folder;
+        $ret->files = $files;
+    }
     echo json_encode($ret);
 }
 
@@ -299,7 +329,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                 if(isLogged()) {
                     $folder = createSecureDeliveryPath();
                     $files = capturesAction($folder, $captreq);
-                    processCaptures($folder, $files);
+                    processCaptures($folder, $files, $files === FALSE);
                 }else {
                     processError(TRUE);
                 }

@@ -1,10 +1,10 @@
-$(document).ready(function (){
+$(document).ready(function () {
     var asec = "#mainsecctl";
     var token = getToken();
     
     checkToken(token);
 
-    $('#mainclickcontrol').click(function (){
+    $('#mainclickcontrol').click(function () {
         if(asec != "#mainsecctl") {
             console.log("change click control act=" + asec);
             $(asec).hide();
@@ -14,7 +14,7 @@ $(document).ready(function (){
         }
     });
 
-    $('#mainclickcaptures').click(function (){
+    $('#mainclickcaptures').click(function () {
         if(asec != "#mainseccaptures") {
             console.log("change click captures act=" + asec);
             $(asec).hide();
@@ -24,7 +24,7 @@ $(document).ready(function (){
         }
     });
 
-    $('#mainclicksettings').click(function (){
+    $('#mainclicksettings').click(function () {
         if(asec != "#mainsecsettings") {
             console.log("change click settings act=" + asec);
             $(asec).hide();
@@ -34,7 +34,7 @@ $(document).ready(function (){
         }
     });
 
-    $('#mainsearchbutton').click(function (){
+    $('#mainsearchbutton').click(function () {
         var date = new Date($('#mainsearchdate').val());
         var fdate = date.getDate() + "/" + (date.getMonth() + 1)+ "/" + date.getFullYear();
         console.log("date:" + fdate);
@@ -44,9 +44,9 @@ $(document).ready(function (){
 
         if(isNaN(date)) {
             showSearchError("Veuillez spécifier une date !");
-        }else if(hours === "" || isNaN(hours) || !Number.isInteger(hours)) {
+        }else if(isNaN(hours) || !Number.isInteger(hours)) {
             showSearchError("Veuillez spécifier une heure valide !");
-        }else if(minutes === "" || isNaN(minutes) || !Number.isInteger(minutes)) {
+        }else if(isNaN(minutes) || !Number.isInteger(minutes)) {
             showSearchError("Veuillez spécifier une minute valide !");
         }else {
             if(hours >= 24) {
@@ -54,6 +54,8 @@ $(document).ready(function (){
             }else if(minutes >= 60) {
                 showSearchError("Veuillez spécifier une minute inférieure à 60 !");
             }else {
+                if($('#mainhourselect').val().trim() === "") hours = -1;
+                if($('#mainminuteselect').val().trim() === "") minutes = -1;
                 console.log("Valide. recherche ...");
                 $('#maincaptureserror').hide();
                 var data = {message: 'Recherche en cours ...', timeout: 1000};
@@ -73,19 +75,23 @@ $(document).ready(function (){
         }
     });
 
-    $('#mainsettingsbutton').click(function (){
+    $('#mainsettingsbutton').click(function () {
         var data = {message: 'Chargement ...', timeout: 1000};
         document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
     });
 
-    $('#mainctlstart').click(function (){
+    $('#mainctlstart').click(function () {
         controlService(true, token);
     });
 
-    $('#mainctlstop').click(function (){
+    $('#mainctlstop').click(function () {
         controlService(false, token);
     })
 });
+
+function updateTitle(newtitle) {
+    $('#maintitle').text(newtitle);
+}
 
 function controlService(start, sessiontoken) {
     var text = (start) ? "Lancement du service ..." : "Arrêt du service ...";
@@ -126,7 +132,6 @@ function controlCaptures(date, sessiontoken) {
         if(status == "success") {
             console.log(data);
             var ret = JSON.parse(data);
-            console.log(ret);
             if(ret.valid && ret.success) {
                 if(ret.operationSuccess) {
                     console.log("Requête réalisée avec succès.");
