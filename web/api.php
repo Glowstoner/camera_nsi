@@ -169,9 +169,9 @@ function serviceAction($action) {
 
 function serviceStart() {
     //Start service
-    $out = shell_exec("echo \$PATH; echo \$USER");
-    $output = shell_exec("captures start");
+    $out = shell_exec("captures take one");
     echo $out;
+    //$output = shell_exec("captures start");
     return TRUE;
 }
 
