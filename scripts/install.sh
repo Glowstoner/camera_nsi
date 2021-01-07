@@ -13,7 +13,6 @@ errore() {
 }
 
 direxists() {
-	local a=""
 	if [ ! -d $dir/$1 ]
 	then
 		mkdir $dir/$1 && return 0 || return 1 
@@ -22,12 +21,14 @@ direxists() {
 }
 
 delete() {
-	local a=""
 	rm -rf $dir/* && return 0 || return 1
 }
 
 copy() {
-	cp -fr $(realpath "$0" | sed 's|\(.*\)/.*|\1|') $dir/public_html && return 0 || return 1
+	path=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
+	echo $path
+	echo $dir/public_html
+	cp -fr $path $dir/public_html/ && return 0 || return 1
 }
 
 modifapache() {
@@ -36,9 +37,9 @@ modifapache() {
 	local da='<Directory \/var\/www\/html\/>'
 	local ob='Options Indexes FollowSymLinks'
 	local oa='Options FollowSymLinks'
-	local rb='DocumentRoot \/var\/www\/html'
-	local ra='DocumentRoot \/var\/www\/html\/public_html'
-	sed -i "s/$db/$da/g" $apacheconf || ret=1
+	local rb='DocumentRoot \/var/\www\/html\/'
+	local ra='DocumentRoot \/var\/www\/html\/public_html\/'
+	sed -i "s/$db/$da/g" $apacheconf || ret=1i
 	sed -i "s/$ob/$a/g" $apacheconf || ret=2
 	sed -i "s/$rb/$ra/g" $apacheconf2 || ret=3
 	return $ret
@@ -61,6 +62,7 @@ main() {
 		3) errore "n'a pas réussi à modifier 'DocumentRoot /var/www/html' par 'DocumentRoot /var/www/html/public_html' dans le fichier $apacheconf $root";;
 	esac
 	permissions || errore "n'a pas pu modifier les droits du répertoire /var/www/html $root"
+	service apache2 restart
 	printf "$success les configurations nécessaires ont bien été effectuées\n"
 	exit 0
 }

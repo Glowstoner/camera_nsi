@@ -154,14 +154,18 @@ function serviceControlRequestValid($data) {
         return 1;
     }else if($sandata === "stop") {
         return 0;
+    }else if($sandata === "status") {
+        return 2;
     }else {
         return -1;
     }
 }
 
 function serviceAction($action) {
-    if($action) {
+    if($action == 1) {
         return serviceStart();
+    }else if($action == 2) {
+        return isServiceRuning();
     }else {
         return serviceStop();
     }
@@ -169,9 +173,7 @@ function serviceAction($action) {
 
 function serviceStart() {
     //Start service
-    $out = shell_exec("captures take one");
-    echo $out;
-    //$output = shell_exec("captures start");
+    exec("captures start -d 1> /dev/null &");
     return TRUE;
 }
 
@@ -182,11 +184,27 @@ function serviceStop() {
     return TRUE;
 }
 
+function isServiceRuning() {
+    $output=NULL;
+    $retval=NULL;
+    exec("ps -aux | grep captures | grep -v grep", $output, $retval);
+    echo $retval."\n";
+    return $retval;
+}
+
 function processControl($success) {
     $ret = new stdClass();
     $ret->valid = TRUE;
     $ret->success = TRUE;
-    $ret->operationSuccess = $success;
+    
+    if($sucess === FALSE || $success === TRUE) {
+        $ret->operationSuccess = $success;
+    }else {
+        
+        $ret->status = $status;
+        $ret->operationSucess = TRUE;
+    }
+
     echo json_encode($ret);
 }
 

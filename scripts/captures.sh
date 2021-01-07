@@ -12,6 +12,7 @@ extension="${fname##*.}"
 fname="${fname%.*}"
 debug=0
 take=-1
+a=""
 
 errorh() {
 	printf "$error $1 $phelp"
@@ -89,13 +90,8 @@ reconfig() {
 }
 
 stop() {
-    #sudo sed -i "s/$(grep -P -o '(?<=run = )\d' $configfile)/1/g" $configfile
     ps axf | grep captures | grep -v grep | awk '{print "kill -9 " $1}' | sh
 }
-
-#start() {
-    #sudo sed -i "s/$(grep -P -o '(?<=run = )\d' $configfile)/0/g" $configfile
-#}
 
 take() {
 	for i in $(seq 1 1 $1)
@@ -231,7 +227,9 @@ then
 			intn='^[-][0-9]+([.][0-9]+)?$'
             if [[ "$2" == "one" ]]
             then
-                fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt&&printf "$success capture prise et enregistrée\n"&&exit 0||errore "Un problème est survenu voyez -d ou --debug\n"
+                fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2 >> $pathlog/log.txt && printf "$success capture prise et enregistrée\n"&&exit 0||errore "Un problème est survenu : $(fswebcam -v --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg)"
+				#echo $directory
+				#fswebcam -v $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg
 			elif [[ "$2" =~ $intp ]] 
 			then
 					take $2
@@ -275,11 +273,11 @@ then
 		log) less $pathlog/log.txt;;
 		clear) cleard ;;
 		start)
-		     #start
             run;;
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
 		reconfig) reconfig;;
+		status) a=$(ps -aux | grep captures | grep -v grep);[[ "$a" == "" ]]&&echo "rien"||echo "oui";;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
