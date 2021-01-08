@@ -173,7 +173,8 @@ function serviceAction($action) {
 
 function serviceStart() {
     //Start service
-    exec("captures start -d 1> /dev/null &");
+    if(isServiceRuning() == 0) return FALSE;
+    exec("captures start > /dev/null &");
     return TRUE;
 }
 
@@ -188,7 +189,6 @@ function isServiceRuning() {
     $output=NULL;
     $retval=NULL;
     exec("ps -aux | grep captures | grep -v grep", $output, $retval);
-    echo $retval."\n";
     return $retval;
 }
 
@@ -197,12 +197,11 @@ function processControl($success) {
     $ret->valid = TRUE;
     $ret->success = TRUE;
     
-    if($sucess === FALSE || $success === TRUE) {
+    if($success === FALSE || $success === TRUE) {
         $ret->operationSuccess = $success;
     }else {
-        
-        $ret->status = $status;
-        $ret->operationSucess = TRUE;
+        $ret->status = $success;
+        $ret->operationSuccess = TRUE;
     }
 
     echo json_encode($ret);

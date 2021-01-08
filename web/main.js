@@ -87,6 +87,8 @@ $(document).ready(function () {
     $('#mainctlstop').click(function () {
         controlService(false, token);
     })
+
+    updateControlStatus(token);
 });
 
 function updateTitle(newtitle) {
@@ -94,6 +96,20 @@ function updateTitle(newtitle) {
 }
 
 function controlService(start, sessiontoken) {
+    if(isControlServiceRuning(sessiontoken)) {
+        if(start) {
+            var data = {message: "Le service est déjà en cours d'éxécution !", timeout: 2000};
+            document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+            return;
+        }
+    }else {
+        if(!start) {
+            var data = {message: "Le service n'est pas en cours d'éxécution !", timeout: 2000};
+            document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+            return;
+        }
+    }
+
     var text = (start) ? "Lancement du service ..." : "Arrêt du service ...";
     var data = {message: text, timeout: 2000};
     document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
@@ -114,6 +130,35 @@ function controlService(start, sessiontoken) {
                         $('#maingloballogo').text("clear");
                         $('#maingloballogo').css("color", "red");
                         $('#mainctlinfo').text("À l'arrêt");
+                    }
+                }else {
+                    console.log("Problème technique !");
+                    ooops();
+                }
+            }else {
+                reconnect();
+            }
+        }
+    });
+}
+
+function isControlServiceRuning(sessiontoken) {
+    $.post("api.php", {servicectl: "status", token: sessiontoken}, function(data, status) {
+        console.log(status);
+        if(status == "success") {
+            console.log(data);
+            var ret = JSON.parse(data);
+            console.log(ret);
+            if(ret.valid && ret.success) {
+                if(ret.operationSuccess) {
+                    console.log("Requête réalisée avec succès.");
+                    if(ret.status == 0) {
+                        return true;
+                    }else if(ret.status == 1) {
+                        return false;
+                    }else {
+                        console.log("Problème technique ! (erreur de status)");
+                        ooops();
                     }
                 }else {
                     console.log("Problème technique !");
@@ -160,6 +205,18 @@ function controlCaptures(date, sessiontoken) {
             }
         }
     });
+}
+
+function updateControlStatus(token) {
+    if(isControlServiceRuning(token)) {
+        $('#maingloballogo').text("check");
+        $('#maingloballogo').css("color", "green");
+        $('#mainctlinfo').text("En fonctionnement");
+    }else {
+        $('#maingloballogo').text("clear");
+        $('#maingloballogo').css("color", "red");
+        $('#mainctlinfo').text("À l'arrêt");
+    }
 }
 
 function displayTiles(files) {
@@ -233,9 +290,9 @@ function checkToken(tokentest) {
 
 function reconnect() {
     console.log("Redirection.");
-    window.location.href = "index.html?fromage";
+    //window.location.href = "index.html?fromage";
 }
 
 function ooops() {
-    window.location.href = "index.html?ooops";
+    //window.location.href = "index.html?ooops";
 }

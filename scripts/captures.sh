@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n-d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
+usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n start -d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
 error="\e[31merreur :\e[39m"
 success="\e[32msuccés :\e[39m"
 phelp=": voir --help pour plus d'informations\n"
@@ -12,7 +12,6 @@ extension="${fname##*.}"
 fname="${fname%.*}"
 debug=0
 take=-1
-a=""
 
 errorh() {
 	printf "$error $1 $phelp"
@@ -61,7 +60,7 @@ configfile() {
     then
         errore "le fichier /etc/captures/captures.config n'existe pas"
     fi
-    configfile="/etc/captures/captures.config"
+    configfile=/etc/captures/captures.config
 }
 
 pathlog() {
@@ -87,6 +86,18 @@ reconfig() {
     directory=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
     nbc=$(cat $configfile|grep -P -p "(?<=nbc = )\S*")
     run=$(cat $configfile|grep -P -o "(?<=run = )\d*")
+}
+
+asroot() {
+        if [ "$EUID" -eq 0 ]
+        then
+                if [ $inst -eq 0 ]
+                then
+                        exit 0
+                else
+                        errore "Veuillez exécutez en root"
+                fi
+        fi
 }
 
 stop() {
@@ -194,6 +205,7 @@ fswd() {
 	fi
 }
 
+asroot
 path
 configfile
 pathlog
@@ -277,7 +289,14 @@ then
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
 		reconfig) reconfig;;
-		status) a=$(ps -aux | grep captures | grep -v grep);[[ "$a" == "" ]]&&echo "rien"||echo "oui";;
+		status) 
+			s=$(ps -aux | grep captures | grep -v grep | grep -v status)
+			if [ "$s" == "" ] 
+			then
+				errore "processus arreté"
+			fi
+				printf "$success processus en marche"
+				exit 0;;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
