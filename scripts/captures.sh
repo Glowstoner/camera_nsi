@@ -91,13 +91,9 @@ reconfig() {
 asroot() {
         if [ "$EUID" -eq 0 ]
         then
-                if [ $inst -eq 0 ]
-                then
-                        exit 0
-                else
-                        errore "Veuillez exécutez en root"
-                fi
+                        return 0
         fi
+		errore "Veuillez exécutez en root"
 }
 
 stop() {
