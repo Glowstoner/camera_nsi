@@ -96,53 +96,55 @@ function updateTitle(newtitle) {
 }
 
 function controlService(start, sessiontoken) {
-    if(isControlServiceRuning(sessiontoken)) {
-        if(start) {
-            var data = {message: "Le service est déjà en cours d'éxécution !", timeout: 2000};
-            document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
-            return;
-        }
-    }else {
-        if(!start) {
-            var data = {message: "Le service n'est pas en cours d'éxécution !", timeout: 2000};
-            document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
-            return;
-        }
-    }
-
-    var text = (start) ? "Lancement du service ..." : "Arrêt du service ...";
-    var data = {message: text, timeout: 2000};
-    document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
-    $.post("api.php", {servicectl: (start) ? "start" : "stop", token: sessiontoken}, function(data, status) {
-        console.log(status);
-        if(status == "success") {
-            console.log(data);
-            var ret = JSON.parse(data);
-            console.log(ret);
-            if(ret.valid && ret.success) {
-                if(ret.operationSuccess) {
-                    console.log("Requête réalisée avec succès.");
-                    if(start) {
-                        $('#maingloballogo').text("check");
-                        $('#maingloballogo').css("color", "green");
-                        $('#mainctlinfo').text("En fonctionnement");
-                    }else {
-                        $('#maingloballogo').text("clear");
-                        $('#maingloballogo').css("color", "red");
-                        $('#mainctlinfo').text("À l'arrêt");
-                    }
-                }else {
-                    console.log("Problème technique !");
-                    ooops();
-                }
-            }else {
-                reconnect();
+    isControlServiceRuning(sessiontoken, function(success) {
+        if(success) {
+            if(start) {
+                var data = {message: "Le service est déjà en cours d'éxécution !", timeout: 2000};
+                document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+                return;
+            }
+        }else {
+            if(!start) {
+                var data = {message: "Le service n'est pas en cours d'éxécution !", timeout: 2000};
+                document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+                return;
             }
         }
+
+        var text = (start) ? "Lancement du service ..." : "Arrêt du service ...";
+        var data = {message: text, timeout: 2000};
+        document.querySelector("#mainctlloading").MaterialSnackbar.showSnackbar(data);
+        $.post("api.php", {servicectl: (start) ? "start" : "stop", token: sessiontoken}, function(data, status) {
+            console.log(status);
+            if(status == "success") {
+                console.log(data);
+                var ret = JSON.parse(data);
+                console.log(ret);
+                if(ret.valid && ret.success) {
+                    if(ret.operationSuccess) {
+                        console.log("Requête réalisée avec succès.");
+                        if(start) {
+                            $('#maingloballogo').text("check");
+                            $('#maingloballogo').css("color", "green");
+                            $('#mainctlinfo').text("En fonctionnement");
+                        }else {
+                            $('#maingloballogo').text("clear");
+                            $('#maingloballogo').css("color", "red");
+                            $('#mainctlinfo').text("À l'arrêt");
+                        }
+                    }else {
+                        console.log("Problème technique !");
+                        ooops();
+                    }
+                }else {
+                    reconnect();
+                }
+            }
+        });
     });
 }
 
-function isControlServiceRuning(sessiontoken) {
+function isControlServiceRuning(sessiontoken, success) {
     $.post("api.php", {servicectl: "status", token: sessiontoken}, function(data, status) {
         console.log(status);
         if(status == "success") {
@@ -153,9 +155,9 @@ function isControlServiceRuning(sessiontoken) {
                 if(ret.operationSuccess) {
                     console.log("Requête réalisée avec succès.");
                     if(ret.status == 0) {
-                        return true;
+                        success(true);
                     }else if(ret.status == 1) {
-                        return false;
+                        success(false);
                     }else {
                         console.log("Problème technique ! (erreur de status)");
                         ooops();
@@ -208,15 +210,17 @@ function controlCaptures(date, sessiontoken) {
 }
 
 function updateControlStatus(token) {
-    if(isControlServiceRuning(token)) {
-        $('#maingloballogo').text("check");
-        $('#maingloballogo').css("color", "green");
-        $('#mainctlinfo').text("En fonctionnement");
-    }else {
-        $('#maingloballogo').text("clear");
-        $('#maingloballogo').css("color", "red");
-        $('#mainctlinfo').text("À l'arrêt");
-    }
+    isControlServiceRuning(token, function(success) {
+        if(success) {
+            $('#maingloballogo').text("check");
+            $('#maingloballogo').css("color", "green");
+            $('#mainctlinfo').text("En fonctionnement");
+        }else {
+            $('#maingloballogo').text("clear");
+            $('#maingloballogo').css("color", "red");
+            $('#mainctlinfo').text("À l'arrêt");
+        }
+    });
 }
 
 function displayTiles(files) {
@@ -290,9 +294,9 @@ function checkToken(tokentest) {
 
 function reconnect() {
     console.log("Redirection.");
-    //window.location.href = "index.html?fromage";
+    window.location.href = "index.html?fromage";
 }
 
 function ooops() {
-    //window.location.href = "index.html?ooops";
+    window.location.href = "index.html?ooops";
 }
