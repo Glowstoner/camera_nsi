@@ -1,8 +1,14 @@
 <?php
-$TOKENS_EXPIRE = 5 * 60;
+$TOKENS_EXPIRE = 10 * 60;
 $TOKENS_PATH = "/var/www/html/data/tokens.dat";
+
 $CAPTURES_PATH = "/var/www/html/data/captures";
+
+$CONFIG_PATH = "/etc/captures/captures.config";
+$CONFIG_AUTHORIZED_KEYS = array("directory", "pathlog", "nbc");
+
 $DELIVERY_PATH = "livraison";
+
 $PASSWD = "test";
 
 function processLogin($success) {
@@ -276,7 +282,7 @@ function createSecureDeliveryPath() {
 function removeDirectory($target) {
     if(is_dir($target)) {
         $files = glob($target.'*', GLOB_MARK);
-        foreach($files as $file){
+        foreach($files as &$file){
             removeDirectory($file);      
         }
         if(file_exists($target)) rmdir($target);
@@ -318,6 +324,76 @@ function processCaptures($folder, $files, $error) {
     echo json_encode($ret);
 }
 
+function readConfig() {
+    global $CONFIG_PATH;
+    if(filesize($CONFIG_PATH) == 0) return NULL;
+    $handle = fopen($CONFIG_PATH, "r");
+    $data = fread($handle, filesize($CONFIG_PATH));
+    fclose($handle);
+    return $data;
+}
+
+function writeConfig($newconfig) {
+    global $CONFIG_PATH;
+    $handle = fopen($CONFIG_PATH, "w");
+
+    $data = "";
+    foreach($newconfig as $key=>$value) {
+        $data .= $key." = ".$value."\n";
+    }
+
+    fwrite($handle, $data);
+    fclose($handle);
+}
+
+function parseConfig($rawconfig) {
+    /*directory = /path
+      pathlog = /path
+      nbc = number
+    */
+    $elements = array();
+    $lines = explode("\n", $rawconfig);
+    foreach($lines as &$line) {
+        $cline = str_replace(" ", "", $line);
+        $parts = explode("=", $cline);
+        $elements[$parts[0]] = $parts[1];
+    }
+
+    return $elements;
+}
+
+function parseConfigJSON($data) {
+    global $CONFIG_AUTHORIZED_KEYS;
+    $sandata = $data; //TODO change sanitazer
+    $jdata = json_decode($sandata, TRUE);
+    if($jdata == NULL || count($jdata) == 0) return NULL;
+    if($jdata["action"] === "get") return TRUE;
+    if($jdata["action"] !== "set") return NULL;
+    foreach($jdata["configuration"] as $key=>$value) {
+        if(!in_array($key, $CONFIG_AUTHORIZED_KEYS)) {
+            return NULL;
+        }
+    }
+    return $jdata["configuration"];
+}
+
+function updateShellScript() {
+    shell_exec("captures reconfig");
+}
+
+function processSettings($view, $win) {
+    $ret = new stdClass();
+    $ret->valid = TRUE;
+    $ret->success = TRUE;
+    $ret->operationSuccess = $win;
+
+    if($view) {
+        $ret->config = parseConfig(readConfig());
+    }
+    
+    echo json_encode($ret);
+}
+
 if($_SERVER["REQUEST_METHOD"] == "POST") {
     if(count($_POST) == 1) {
         if(isset($_POST["passwd"])) {
@@ -355,6 +431,21 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }else {
                 processError(FALSE);
+            }
+        }else if(isset($_POST["settings"]) && isset($_POST["token"])) {
+            if(isLogged()) {
+                $data = parseConfigJSON($_POST["settings"]);
+                if($data === TRUE) {
+                    processSettings(TRUE, TRUE);
+                }else if($data !== NULL) {
+                    writeConfig($data);
+                    updateShellScript();
+                    processSettings(FALSE, TRUE);
+                }else {
+                    processError(TRUE);
+                }
+            }else {
+                processError(TRUE);
             }
         }else {
             processError(FALSE);
