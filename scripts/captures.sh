@@ -409,7 +409,7 @@ then
 		log) configfile
 			pathlog
 			log
-			less $pathlog/log.txt;;
+			less -f -r $pathlog/log.txt;;
 		clear) starting cleard ;;
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
