@@ -129,7 +129,8 @@ updatedir() {
 		case $2 in 
 			d)
 				echo "update dir in case d\n"
-				sed -E 's/(?<=directory = )\S*/oui/gm;t;d' <<< "directory = /oui/ok/daccord";;
+				r=$(grep -i -P "(?<=directory = \S*")
+				sed -E -i 's/(?<=directory = )\S*/$2/gm;t;d' <<< $r $configfile;;
 			l)
 				sed s/$(cat /home/esther/.local/bin/captures.config|grep -P -o "(?<=directory = )\S*")//g -i $configfile
 				echo $1>>configfile
@@ -396,6 +397,7 @@ then
 			starting
             ;;
         stop) errore "Usage : captures stop : arrête de prendre des captures";;
+		reconfig) errore "Usage : captures reconfig : recharge le fichier de configuration"
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -413,7 +415,9 @@ then
 		clear) starting cleard ;;
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
-		reconfig)touch /tmp/captures_reconfig
+		reconfig)touch /tmp/captures_reconfiol characters to be displayed.  The default is to display control characters
+              using the caret notation; for example, a control-A (octal 001) is displayed as "^A".  Warning:
+              when the -r option is usedg
 				 exit 0;;
 		start) starting;;
 		status) 
