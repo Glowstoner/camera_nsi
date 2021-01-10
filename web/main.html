@@ -59,7 +59,7 @@
             </section>
             <section id="mainseccaptures">
                 <div id="mainsearchcaptures">
-                    <p id="maincaptureserror"><span id="maincaptureserroricon" class="material-icons">error</span>Erreur !</p>
+                    <p id="maincaptureserror" class="mainerror"><span class="material-icons mainerroricon">error</span>Erreur !</p>
                     <input id="mainsearchdate" type="date" class="mainsearchctl" placeholder="Sélectionnez une date">
                     <div class="mdl-textfield mdl-js-textfield mainsearchctl">
                         <input class="mdl-textfield__input" type="text" id="mainhourselect">
@@ -86,29 +86,32 @@
             </section>
             <section id="mainsecsettings">
                 <div id="mainsettings">
+                    <p id="mainsettingserror" class="mainerror"><span class="material-icons mainerroricon">error</span>Erreur !</p>
                     <ul class="demo-list-control mdl-list">
                         <li class="mdl-list__item">
                             <span class="mdl-list__item-primary-content mainsettingstitle">Dossier pour les captures</span>
                             <span class="mdl-list__item-secondary-action">
-                                <div class="mdl-textfield mdl-js-textfield mainsettingstextarea">
-                                    <input class="mdl-textfield__input" type="text" id="mainsettingspath">
+                                <div id="mainsettingspathhandler" class="mdl-textfield mdl-js-textfield mainsettingstextarea">
+                                    <input class="mdl-textfield__input" type="text" pattern="\/[\/\w+]+" id="mainsettingspath">
                                     <label class="mdl-textfield__label" for="mainsettingspath">Chemin absolu</label>
+                                    <span class="mdl-textfield__error">Le champ spécifié est invalide !</span>
                                 </div>
                             </span>
                         </li>
                         <li class="mdl-list__item">
                             <span class="mdl-list__item-primary-content mainsettingstitle">Dossier contenant le journal d'erreur</span>
                             <span class="mdl-list__item-secondary-action">
-                                <div class="mdl-textfield mdl-js-textfield mainsettingstextarea">
-                                    <input class="mdl-textfield__input" type="text" id="mainsettingspathlog">
+                                <div id="mainsettingspathloghandler" class="mdl-textfield mdl-js-textfield mainsettingstextarea">
+                                    <input class="mdl-textfield__input" type="text" pattern="\/[\/\w+]+" id="mainsettingspathlog">
                                     <label class="mdl-textfield__label" for="mainsettingspathlog">Chemin absolu</label>
+                                    <span class="mdl-textfield__error">Le champ spécifié est invalide !</span>
                                 </div>
                             </span>
                         </li>
                         <li class="mdl-list__item">
                             <span class="mdl-list__item-primary-content mainsettingstitle">Nombre de captures en une minute</span>
                             <span class="mdl-list__item-secondary-action">
-                                <div class="mdl-textfield mdl-js-textfield mainsettingstextarea">
+                                <div id="mainsettingsnumberhandler" class="mdl-textfield mdl-js-textfield mainsettingstextarea">
                                     <input class="mdl-textfield__input" type="text" pattern="[1-9][0-9]*" id="mainsettingsnumber">
                                     <label class="mdl-textfield__label" for="mainsettingsnumber">Nombre</label>
                                     <span class="mdl-textfield__error">Le champ spécifié est invalide !</span>

@@ -1,4 +1,6 @@
 $(document).ready(function () {
+    console.log("Page chargée.");
+
     var asec = "#mainsecctl";
     var token = getToken();
     
@@ -11,6 +13,7 @@ $(document).ready(function () {
             $('#mainsecctl').show();
             asec = "#mainsecctl";
             updateTitle("État du programme");
+            updateControlStatus(token);
         }
     });
 
@@ -21,6 +24,7 @@ $(document).ready(function () {
             $('#mainseccaptures').show();
             asec = "#mainseccaptures";
             updateTitle("Captures");
+            backgroundProcess(token);
         }
     });
 
@@ -31,6 +35,7 @@ $(document).ready(function () {
             $('#mainsecsettings').show();
             asec = "#mainsecsettings";
             updateTitle("Paramètres");
+            backgroundProcess(token);
         }
     });
 
@@ -76,8 +81,7 @@ $(document).ready(function () {
     });
 
     $('#mainsettingsbutton').click(function () {
-        var data = {message: 'Chargement ...', timeout: 1000};
-        document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
+        updateSettings(token);
     });
 
     $('#mainctlstart').click(function () {
@@ -86,10 +90,98 @@ $(document).ready(function () {
 
     $('#mainctlstop').click(function () {
         controlService(false, token);
-    })
+    });
 
     updateControlStatus(token);
 });
+
+function backgroundProcess(token) {
+    setControlServiceLoadingScreen();
+    updateLocalServerSettings(token);
+}
+
+function updateSettings(sessiontoken) {
+    let capturesPath = document.getElementById("mainsettingspath");
+    let logPath = document.getElementById("mainsettingspathlog");
+    let nbCapt = document.getElementById("mainsettingsnumber");
+    
+    if(capturesPath.value === "" || !capturesPath.checkValidity()) {
+        showSettingsError("Le dossier spécifié pour les captures est invalide !");
+    }else if(logPath.value === "" || !logPath.checkValidity()) {
+        showSettingsError("Le dossier spécifié pour contenir le journal d'erreur est invalide !");
+    }else if(nbCapt.value === "" || !nbCapt.checkValidity()) {
+        showSettingsError("Le nombre de captures spécifié est invalide, la valeur doit être un nombre supérieur à 0 !");
+    }else {
+        var data = {message: 'Chargement ...', timeout: 1000};
+        document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
+        var jdata = {
+            action: "set",
+            configuration: {
+                directory: capturesPath.value,
+                pathlog: logPath.value,
+                nbc: nbCapt.value
+            }
+        };
+
+        let jdataenc = JSON.stringify(jdata);
+        console.log("JSON envoyé : " + jdataenc);
+        $.post("api.php", {settings: jdataenc, token: sessiontoken}, function(data, status) {
+            console.log(status);
+            if(status == "success") {
+                console.log(data);
+                var ret = JSON.parse(data);
+                console.log(ret);
+                if(ret.valid && ret.success) {
+                    if(ret.operationSuccess) {
+                        console.log("Requête réalisée avec succès.");
+                        $('#mainsettingserror').hide();
+                        var data = {message: 'Paramètres modifiés', timeout: 1000};
+                        document.querySelector("#mainsettingsbuttonloading").MaterialSnackbar.showSnackbar(data);
+                    }else {
+                        console.log("Problème technique !");
+                        ooops();
+                    }
+                }else {
+                    reconnect();
+                }
+            }
+        });
+    }
+}
+
+function updateLocalServerSettings(sessiontoken) {
+    var jdata = {
+        action: "get"
+    };
+
+    let jdataenc = JSON.stringify(jdata);
+    console.log("JSON envoyé : " + jdataenc);
+    $.post("api.php", {settings: jdataenc, token: sessiontoken}, function(data, status) {
+        console.log(status);
+        if(status == "success") {
+            console.log(data);
+            var ret = JSON.parse(data);
+            console.log(ret);
+            if(ret.valid && ret.success) {
+                if(ret.operationSuccess) {
+                    console.log("Requête réalisée avec succès.");
+                    
+                    document.getElementById("mainsettingspath").value = ret.configuration.directory;
+                    document.getElementById("mainsettingspathlog").value = ret.configuration.pathlog;
+                    document.getElementById("mainsettingsnumber").value = ret.configuration.nbc;
+                    document.getElementById("mainsettingspathhandler").className = "mdl-textfield mdl-js-textfield mainsettingstextarea is-dirty";
+                    document.getElementById("mainsettingspathloghandler").className = "mdl-textfield mdl-js-textfield mainsettingstextarea is-dirty";
+                    document.getElementById("mainsettingsnumberhandler").className = "mdl-textfield mdl-js-textfield mainsettingstextarea is-dirty";
+                }else {
+                    console.log("Problème technique !");
+                    ooops();
+                }
+            }else {
+                reconnect();
+            }
+        }
+    });
+}
 
 function updateTitle(newtitle) {
     $('#maintitle').text(newtitle);
@@ -123,15 +215,17 @@ function controlService(start, sessiontoken) {
                 if(ret.valid && ret.success) {
                     if(ret.operationSuccess) {
                         console.log("Requête réalisée avec succès.");
-                        if(start) {
-                            $('#maingloballogo').text("check");
-                            $('#maingloballogo').css("color", "green");
-                            $('#mainctlinfo').text("En fonctionnement");
-                        }else {
-                            $('#maingloballogo').text("clear");
-                            $('#maingloballogo').css("color", "red");
-                            $('#mainctlinfo').text("À l'arrêt");
-                        }
+                        isControlServiceRuning(sessiontoken, function(running) {
+                            if(running) {
+                                $('#maingloballogo').text("check");
+                                $('#maingloballogo').css("color", "green");
+                                $('#mainctlinfo').text("En fonctionnement");
+                            }else {
+                                $('#maingloballogo').text("clear");
+                                $('#maingloballogo').css("color", "red");
+                                $('#mainctlinfo').text("À l'arrêt");
+                            }
+                        });
                     }else {
                         console.log("Problème technique !");
                         ooops();
@@ -142,6 +236,12 @@ function controlService(start, sessiontoken) {
             }
         });
     });
+}
+
+function setControlServiceLoadingScreen() {
+    $('#maingloballogo').text("cached");
+    $('#maingloballogo').css("color", "rgb(49, 49, 49)");
+    $('#mainctlinfo').text("Chargement ...");
 }
 
 function isControlServiceRuning(sessiontoken, success) {
@@ -255,7 +355,13 @@ function displayNotFound() {
 
 function showSearchError(message) {
     var errorMessage = $('#maincaptureserror');
-    errorMessage.html("<span id=\"maincaptureserroricon\" class=\"material-icons\">error</span>"+message);
+    errorMessage.html("<span class=\"material-icons mainerroricon\">error</span>"+message);
+    errorMessage.show();
+}
+
+function showSettingsError(message) {
+    var errorMessage = $('#mainsettingserror');
+    errorMessage.html("<span class=\"material-icons mainerroricon\">error</span>"+message);
     errorMessage.show();
 }
 

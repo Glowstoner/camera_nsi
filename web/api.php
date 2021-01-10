@@ -1,11 +1,12 @@
 <?php
-$TOKENS_EXPIRE = 10 * 60;
+$TOKENS_EXPIRE = 15 * 60;
 $TOKENS_PATH = "/var/www/html/data/tokens.dat";
 
 $CAPTURES_PATH = "/var/www/html/data/captures";
 
 $CONFIG_PATH = "/etc/captures/captures.config";
-$CONFIG_AUTHORIZED_KEYS = array("directory", "pathlog", "nbc");
+$CONFIG_CAPTURE_PATH_FIELD = "directory";
+$CONFIG_AUTHORIZED_KEYS = array($CONFIG_CAPTURE_PATH_FIELD, "pathlog", "nbc");
 
 $DELIVERY_PATH = "livraison";
 
@@ -226,6 +227,7 @@ function capturesSearchRequestValid($data) {
 }
 
 function searchCapturesByDate($date) {
+    updateVarsFromConfig();
     global $CAPTURES_PATH;
     
     $vmonth = ($date->month < 10) ? "0".$date->month : $date->month;
@@ -330,16 +332,21 @@ function readConfig() {
     $handle = fopen($CONFIG_PATH, "r");
     $data = fread($handle, filesize($CONFIG_PATH));
     fclose($handle);
-    return $data;
+    return trim($data);
 }
 
 function writeConfig($newconfig) {
+    global $CONFIG_CAPTURE_PATH_FIELD;
+    global $CAPTURES_PATH;
     global $CONFIG_PATH;
     $handle = fopen($CONFIG_PATH, "w");
 
     $data = "";
     foreach($newconfig as $key=>$value) {
         $data .= $key." = ".$value."\n";
+        if($key === $CONFIG_CAPTURE_PATH_FIELD) {
+            $CAPTURES_PATH = $value;
+        }
     }
 
     fwrite($handle, $data);
@@ -381,6 +388,13 @@ function updateShellScript() {
     shell_exec("captures reconfig");
 }
 
+function updateVarsFromConfig() {
+    global $CONFIG_CAPTURE_PATH_FIELD;
+    global $CAPTURES_PATH;
+    $config = parseConfig(readConfig());
+    $CAPTURES_PATH = $config[$CONFIG_CAPTURE_PATH_FIELD];
+}
+
 function processSettings($view, $win) {
     $ret = new stdClass();
     $ret->valid = TRUE;
@@ -388,7 +402,7 @@ function processSettings($view, $win) {
     $ret->operationSuccess = $win;
 
     if($view) {
-        $ret->config = parseConfig(readConfig());
+        $ret->configuration = parseConfig(readConfig());
     }
     
     echo json_encode($ret);
@@ -442,7 +456,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     updateShellScript();
                     processSettings(FALSE, TRUE);
                 }else {
-                    processError(TRUE);
+                    processSettings(FALSE, FALSE);
                 }
             }else {
                 processError(TRUE);

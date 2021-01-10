@@ -54,7 +54,7 @@ a {
     width: 256px;
     height: 256px;
     margin: 20px;
-    background: url('picsou.jpeg') center / cover;
+    background: url('broken_image.svg') center / cover;
   }
 
 .capture-image > .mdl-card__actions {
@@ -76,7 +76,7 @@ a {
     height: 100%;
 }
 
-#maincaptureserror {
+.mainerror {
     color: rgb(49, 49, 49);
     font-size: 20px;
     font-family: 'Roboto';
@@ -88,9 +88,10 @@ a {
     padding-top: 10px;
     padding-bottom: 15px;
     display: none;
+    margin-top: 30px;
 }
 
-#maincaptureserroricon {
+.mainerroricon {
     margin-right: 20px;
     margin-top: 10px;
 }
