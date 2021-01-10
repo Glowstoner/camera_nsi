@@ -152,7 +152,9 @@ function addToken() {
 }
 
 function isLogged() {
-    return checkToken(htmlentities($_POST["token"]));
+    $valid = htmlentities($_POST["token"]);
+    if(trim($valid) === "") return FALSE;
+    return checkToken($valid);
 }
 
 function serviceControlRequestValid($data) {
