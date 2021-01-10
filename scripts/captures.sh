@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\n start -d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
+usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\nstart -d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] [nberreurs] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
 error="\e[31merreur :\e[39m"
 success="\e[32msuccés :\e[39m"
 phelp=": voir --help pour plus d'informations\n"
@@ -55,11 +55,28 @@ path() {
 	cp $thispath/$name ${patha[0]}/$fname
 }
 
+asroot() {
+
+	if getent group video | grep -q "\b$USER\b";then
+    	return 0
+	elif [ "$EUID" -eq 0 ]
+	then
+		return 0
+	fi
+	errore "Veuillez exécutez en root"
+}
+
 configfile() {
-    if [ ! -e /etc/captures/captures.config ]
-    then
-        errore "le fichier /etc/captures/captures.config n'existe pas"
-    fi
+	if [ ! -d /etc/captures ]
+	then
+		mkdir /etc/captures
+	else
+		if [ ! -e /etc/captures/captures.config ]
+		then
+			touch captures.config
+			printf "directory = /var/www/html/data/captures\npathlog = /var/www/html/data\nnbc=60\n">captures.config
+		fi
+	fi
     configfile=/etc/captures/captures.config
 }
 
@@ -77,23 +94,110 @@ nbc() {
     nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\S*")
 }
 
-run() {
-    run=$(cat $configfile|grep -P -o "(?<=run = )\d")
+config() {
+	printf "Configuration...\n"
+	[ ! -d /etc/captures ]&&mkdir /etc/captures
+	[ ! e /etc/captures/captures.config ]&&touch captures.config
+	printf "Dans quel répertoire voulez-vous conserver le fichier log.txt dans lequel vous trouverez les logs d'erreur des captures effectuées ? "
+	read pathlog
+	toabsolute $pathlog l
+	[[ -d $pathlog ]]||sdir $pathlog l 1
+	echo "pathlog = $pathlog" >> $configfile
+	printf "Le fichier log.txt sera conservé dans $pathlog\n"
+	printf "Dans quel répertoire voulez vous enregistrer les captures qui seront faites ? "
+	read directory
+	toabsolute $directory d
+	if [ ! -d $directory ]
+	then sdir $directory d 1
+	fi
+	echo "directory = $directory" >> $configfile
+	if [ "$?" -ne "0" ]
+	then rm $configfile
+		exit 1
+	fi
+	printf "Les images seront conservées dans $directory\n"
+	cp $thispath/$name ${patha[0]}/$fname
+	printf "Captures peut commencé à être utilisé\n"
+	printf "$usage\n"
+	exit 0
+}
+
+updatedir() {
+	if [ "$#" -lt "3" ]
+	then
+		echo "update dir in then\n"
+		case $2 in 
+			d)
+				echo "update dir in case d\n"
+				sed -E 's/(?<=directory = )\S*/oui/gm;t;d' <<< "directory = /oui/ok/daccord";;
+			l)
+				sed s/$(cat /home/esther/.local/bin/captures.config|grep -P -o "(?<=directory = )\S*")//g -i $configfile
+				echo $1>>configfile
+				echo "logpath = $1">>configfile
+				[ -e $configfile ]&&pathlog=$(cat $configfile|grep -P -o "(?<=pathlog = )\S*")
+		esac
+	else
+		case $2 in
+		d) echo "directory = $1">>$configfile;;
+		l) echo "logpath = $1">>$configfile;;
+		esac
+		cat $configfile
+	fi
+}
+
+
+sdir() {
+	printf "$error le répertoire $1 n'existe pas voulez-vous le créer ? O/n "
+	read create
+        while [ "$create" != "O" ] || [ "$create" != "o" ] || [ "$create" != "N" ] || [ "$create" != "n" ]
+		do
+			case $create in
+				O|o)
+					if [[ ! -z $1 ]]
+					then
+						updatedir $1 $2 $3
+						if [ "$?" -ne "0"]
+						then 
+							echo "not update"
+							exit 1
+						fi
+					fi
+					case $2 in
+						d) toabsolute $1 d&&echo "$1 = $directory\n"&&mkdir $directory;;
+						l) toabsolute $1 l&&echo "$1 = $pathlog\n"&&mkdir $pathlog;;
+						*) exit 1;;
+					esac
+						if [ "$?" -eq 0 ]
+							then
+								if [ "$#" -lt "3" ]
+								then
+									printf "$success répertoire créé et mis à jour\n"
+									exit 0
+								else
+									printf "$success répertoire créé et mis à jour\n"
+									return 0
+									
+								fi
+							else
+									errore "une erreur est survenue"
+						fi
+						;;
+				N|n)
+					printf "Le répertoire n'a pas été mis à jour\n"
+					exit 1
+									;;
+				*)
+					printf  "$error le répertoire $directory n'existe pas voulez-vous le créer ? O/n"
+					read create
+							;;
+			esac
+		done
 }
 
 reconfig() {
     pathlog=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
     directory=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
     nbc=$(cat $configfile|grep -P -p "(?<=nbc = )\S*")
-    run=$(cat $configfile|grep -P -o "(?<=run = )\d*")
-}
-
-asroot() {
-        if [ "$EUID" -eq 0 ]
-        then
-                        return 0
-        fi
-		errore "Veuillez exécutez en root"
 }
 
 stop() {
@@ -162,7 +266,7 @@ dird() {
 }
 
 log() {
-    	if [ ! -d "$pathlog" ]
+    if [ ! -d "$pathlog" ]
     then
 		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> le dossier $pathlog n'existe pas">>log.txt
         errore "Le réperoire $pathlog n'existe pas"	
@@ -201,16 +305,31 @@ fswd() {
 	fi
 }
 
+displaylogs() {
+	IFS=$'\n' read -r -d '' -a lines < <( awk '/{}/{ print NR }' $pathlog/log.txt && printf '\0' )
+	for l in "${lines[@]}"
+	do
+		lines="$(echo $l)d;$(( $l-1 ))d"
+		sed -i -e $lines $pathlog/log.txt
+	done
+	sed -i 's/{//g' $pathlog/log.txt
+	sed -i 's/}//g' $pathlog/log.txt
+}
+
+starting() {
+	configfile
+	pathlog
+	log
+	nbc
+	pathdirectory
+	dir
+}
+
 asroot
-path
 configfile
 pathlog
-log
-nbc
-pathdirectory
-dir
-
-[ ! -f log.txt ]&&touch $pathlog/log.txt
+[ ! -f $pathlog/log.txt ]&&touch $pathlog/log.txt
+path
 
 if [ "$#" -gt "2" ]||[ "$#" -eq "0" ]
 then
@@ -219,17 +338,24 @@ then
 elif [[ "$#" -gt "1" ]]
 then
 	case  $1 in
-		get) case $2 in 
-             capturespath) printf "$directory\n"
+		get) configfile
+			case $2 in 
+             capturespath) pathdirectory
+							printf "$directory\n"
              ;;
-             logpath) printf "$pathlog\n"
+             logpath) 
+			 			printf "$pathlog\n"
              ;;
-             nbcaptures) printf "$nbc\n"
+             nbcaptures) nbc
+			 			printf "$nbc\n"
              ;;
+			 nberreurs) 
+			 	printf "Il y a : $(grep -c "erreur" $pathlog/log.txt) erreurs dans le fichier $pathlog/log.txt\n"&&exit 0
+			 ;;
              *) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
              esac
              ;;
-        take)
+        take) starting
 			intp='^[+]?[0-9]+$'
 			float='^[+]?[-]?[0-9]+([.,][0-9]+)?$'
 			intn='^[-][0-9]+([.][0-9]+)?$'
@@ -252,20 +378,21 @@ then
             fi;;
 		log) errore "Usage : captures log : lis le fichier log.txt";;
 		clear) errore "Usage : captures clear : supprime toutes les fichiers du repertoire où sont stockées les captures";;
-		-d|--debug)
-			errore "Usage : captures start -d,--debug  : affiche des informations supplémentaires";;
-		start) 
+		-d|--debug) errore "Usage : captures start -d,--debug  : affiche des informations supplémentaires";;
+		start)
 			if [ "$#" -gt "2" ]
 			then
-				errorh "trop d'options"
+				errorh "Trop d'options"
 			else
 				case $2 in
-					-d|--debug)debug=1
-                            #start
-                            run;;
+					-d|--debug)
+							starting
+							debug=1
+                            ;;
 					*) errorh "Trop d'options";;
 				esac
 			fi
+			starting
             ;;
         stop) errore "Usage : captures stop : arrête de prendre des captures";;
 		-h|--help)
@@ -278,13 +405,16 @@ then
 	case $1 in 
 		-d|--debug) errore "Usage : ./captures.sh start -d,--debug  : affiche des informations supplémentaires";;
 		set) errore "Usage captures -s, --set <repertoire>";;
-		log) less $pathlog/log.txt;;
-		clear) cleard ;;
-		start)
-            run;;
+		log) configfile
+			pathlog
+			log
+			less $pathlog/log.txt;;
+		clear) starting cleard ;;
         stop) stop;;
-        get) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
-		reconfig) reconfig;;
+        get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
+		reconfig) configfile
+				reconfig;;
+		start) starting;;
 		status) 
 			s=$(ps -aux | grep captures | grep -v grep | grep -v status)
 			if [ "$s" == "" ] 
@@ -302,7 +432,7 @@ fi
 
 if [ "$debug" -eq "0" ]
 then
-    while [[ "$run" == "0" ]]
+    while true
     do
         #for i in $(seq 1 1 $nbc)
         #do
@@ -310,16 +440,14 @@ then
         cam
         dir
         fsw
-        fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
+        #fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
+		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
+		displaylogs
         sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
-        if [[ "$run" == "1" ]]
-        then
-            break
-        fi
         #done
     done
 else
-    while [[ "$run" == "0" ]]
+    while true
     do
         #for i in $(seq 1 1 $nbc)
             #do
