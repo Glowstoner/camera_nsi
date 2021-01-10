@@ -455,7 +455,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     processSettings(TRUE, TRUE);
                 }else if($data !== NULL) {
                     writeConfig($data);
-                    updateShellScript();
+                    if(isServiceRuning()) updateShellScript();
                     processSettings(FALSE, TRUE);
                 }else {
                     processSettings(FALSE, FALSE);
