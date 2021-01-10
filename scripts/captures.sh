@@ -195,9 +195,10 @@ sdir() {
 }
 
 reconfig() {
-    pathlog=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
-    directory=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
-    nbc=$(cat $configfile|grep -P -p "(?<=nbc = )\S*")
+    pathlog=$(grep -i -P -o "(?<=directory = )\S*" $configfile)
+    directory=$(grep -i -P -o "(?<=directory = )\S*" $configfile)
+    nbc=$(grep -i -P -o "(?<=nbc = )\S*" $configfile)
+	rm /tmp/captures_reconfig
 }
 
 stop() {
@@ -252,7 +253,7 @@ dir() {
 	if [ ! -d "$directory" ]
     then
 		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> le dossier $directory n'existe pas">>log.txt
-        errore "Le réperoire $directory n'existe pas"	
+        errore "Le répertoire des captures $directory n'existe pas"	
         #sdir||exit 1
     fi
 }
@@ -269,7 +270,7 @@ log() {
     if [ ! -d "$pathlog" ]
     then
 		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> le dossier $pathlog n'existe pas">>log.txt
-        errore "Le réperoire $pathlog n'existe pas"	
+        errore "Le répertoire de logs $pathlog n'existe pas"	
         #sdir||exit 1
     fi
 }
@@ -412,8 +413,8 @@ then
 		clear) starting cleard ;;
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
-		reconfig) configfile
-				reconfig;;
+		reconfig)touch /tmp/captures_reconfig
+				 exit 0;;
 		start) starting;;
 		status) 
 			s=$(ps -aux | grep captures | grep -v grep | grep -v status)
@@ -436,6 +437,7 @@ then
     do
         #for i in $(seq 1 1 $nbc)
         #do
+		[ -e /tmp/captures_reconfig ]&&reconfig
         log
         cam
         dir
@@ -452,6 +454,7 @@ else
         #for i in $(seq 1 1 $nbc)
             #do
             #echo "------------i = $i--------------"
+			[ -e /tmp/captures_reconfig ]&&reconfig
             logd&& printf "répertoire log = $pathlog\n"
             camd&& printf "/dev/video0 trouvé\n"
             dird&& printf "repertoire  $directory existe\n"
