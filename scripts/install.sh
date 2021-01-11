@@ -1,9 +1,8 @@
 #!/bin/bash
 
-phelp="Usage : install.sh <répertoire d'enregistrement des captures> <répertoire d'enregistrement du fichier log.txt> <nombre de captures par minutes>\ninstall.sh -i : mode interactif"
+phelp="Usage : install.sh <répertoire d'enregistrement des captures> <répertoire d'enregistrement du fichier log.txt> <nombre de captures par minutes>\ninstall.sh -i|--interactif : mode interactif"
 success="\e[32msuccés :\e[39m"
 error="\e[31merreur :\e[39m"
-root="Vérifiez bien que vous exécutez ce script en tant que superutilisateur"
 dir=/var/www/html
 apacheconf=/etc/apache2/apache2.conf
 apacheconf2=/etc/apache2/sites-available/000-default.conf
@@ -25,6 +24,12 @@ toabsolute() {
 	echo "$dirabs"
 }
 
+required() {
+	a=$(dpkg --get-selections | grep apache)
+	[[ "$a" == "" ]] && return 1
+
+}
+
 direxists() {
 	if [ ! -d $dir/$1 ]
 	then
@@ -42,7 +47,7 @@ copy() {
 	path=$(sed -E 's/scripts/web/g'<<<$path)
 	echo $path
 	echo $dir/public_html
-	cp -fr $path $dir/public_html/ && return 0 || return 1
+	cp -r $path/* $dir/public_html/ && return 0 || return 1
 }
 
 modifapache() {
