@@ -107,12 +107,9 @@ setnbc() {
 	local intn='^[-][0-9]+([.][0-9]+)?$'
 	printf "Combien de captures voulez-vous faire par minute ? "
 	read nbc
-	while :
+	while [[ ! "$nbc" =~ $intp ]]
 	do
-		if [[  "$nbc" =~ $intp ]]
-		then
-			break
-		elif [[ "$nbc" =~ $intn ]]
+		if [[ "$nbc" =~ $intn ]]
 		then
 			printf "$error le nombre de captures par minute doit être positif\n"
 			printf "Combien de captures voulez-vous faire par minute ? "
