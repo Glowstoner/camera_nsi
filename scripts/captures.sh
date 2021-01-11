@@ -397,7 +397,7 @@ then
 			starting
             ;;
         stop) errore "Usage : captures stop : arrête de prendre des captures";;
-		reconfig) errore "Usage : captures reconfig : recharge le fichier de configuration"
+		reconfig) errore "Usage : captures reconfig : recharge le fichier de configuration";;
 		-h|--help)
 			printf "$usage\n"
 			exit 0;;
@@ -415,9 +415,7 @@ then
 		clear) starting cleard ;;
         stop) stop;;
         get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
-		reconfig)touch /tmp/captures_reconfiol characters to be displayed.  The default is to display control characters
-              using the caret notation; for example, a control-A (octal 001) is displayed as "^A".  Warning:
-              when the -r option is usedg
+		reconfig)touch /tmp/captures_reconfig
 				 exit 0;;
 		start) starting;;
 		status) 
