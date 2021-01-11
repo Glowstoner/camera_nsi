@@ -215,6 +215,7 @@ if [ $# -gt 3 ]
 then 
 	errore "Trop d'arguments\n$phelp"
 elif [ $# -eq 1 ]
+then
 	if [[ "$1" ==  "-i" ]]||[[ "$1" == "--interactif"]]
 	then
 		main 1
