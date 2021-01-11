@@ -109,7 +109,7 @@ setnbc() {
 	read nbc
 	while :
 	do
-		if [[  "$nbc" ~= $intp ]]
+		if [[  "$nbc" =~ $intp ]]
 		then
 			break
 		elif [[ "$nbc" =~ $intn ]]
