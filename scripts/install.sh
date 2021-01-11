@@ -1,12 +1,13 @@
 #!/bin/bash
 
-phelp="Usage : install.sh <répertoire d'enregistrement des captures> <répertoire d'enregistrement du fichier log.txt> <nombre de captures par minutes>\ninstall.sh -i : mode interactif\n"
+phelp="Usage : install.sh <répertoire d'enregistrement des captures> <répertoire d'enregistrement du fichier log.txt> <nombre de captures par minutes>\ninstall.sh -i : mode interactif"
 success="\e[32msuccés :\e[39m"
 error="\e[31merreur :\e[39m"
 root="Vérifiez bien que vous exécutez ce script en tant que superutilisateur"
 dir=/var/www/html
 apacheconf=/etc/apache2/apache2.conf
 apacheconf2=/etc/apache2/sites-available/000-default.conf
+configfile=/etc/captures/captures.config
 
 errore() {
     printf "$error $1\n"
@@ -14,14 +15,14 @@ errore() {
 }
 
 toabsolute() {
-        if  [[ $1 == "~/"* ]]
-        then
-                dirabs=$( echo $1|sed 's/~//')
-                dirabs="/home/$(echo $USER)$dirabs"
-        else
-                dirabs=$(readlink -f $1)
-        fi
-        echo "$dirabs"
+	if  [[ $1 == "~/"* ]]
+	then
+			dirabs=$( echo $1|sed 's/~//')
+			dirabs="/home/$(echo $USER)$dirabs"
+	else
+			dirabs=$(readlink -f $1)
+	fi
+	echo "$dirabs"
 }
 
 direxists() {
@@ -38,6 +39,7 @@ delete() {
 
 copy() {
 	path=$(realpath "$0" | sed 's|\(.*\)/.*|\1|')
+	path=$(sed -E 's/scripts/web/g'<<<$path)
 	echo $path
 	echo $dir/public_html
 	cp -fr $path $dir/public_html/ && return 0 || return 1
@@ -52,8 +54,16 @@ modifapache() {
 	local rb='DocumentRoot \/var/\www\/html\/'
 	local ra='DocumentRoot \/var\/www\/html\/public_html\/'
 	sed -i "s/$db/$da/g" $apacheconf || ret=1
-	sed -i "s/$ob/$a/g" $apacheconf || ret=2
-	sed -i "s/$rb/$ra/g" $apacheconf2 || ret=3
+	echo "1 done"
+	sed -i "s/Indexes//g" $apacheconf || ret=2
+	echo "2 done"
+	r=$(grep -i -P -o "(?<=DocumentRoot ).*" $apacheconf2)
+	echo "r = $r"
+	if [[ "$r" != "/var/www/html/public_html" ]]
+	then
+		sed -i "s/\/var\/www\/html\//\/var\/www\/html\/public_html/g" $apacheconf2 || ret=3
+		echo "3 done"
+	fi
 	return $ret
 }
 
@@ -63,13 +73,13 @@ setdir() {
 		printf "Dans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
 		read d
 		capturespath=$(toabsolute $d)
-		[ -d capturespath ]&&return 0||createdir capturespath
+		[ -d $capturespath ]&&return 0||createdir $capturespath
 		[ $? -eq 0 ] && return 0 || return 1
 	else
 		printf "Dans quel répertoire voulez-vous enregistrer le fichier log.txt le journal d'erreurs ? "
 		read l
 		logpath=$(toabsolute $l)
-		[ -d logpath ]&&return 0||createdir logpath
+		[ -d $logpath ]&&return 0||createdir $logpath
 		[ $? -eq 0 ] && return 0 || return 1
 	fi
 }
@@ -83,7 +93,7 @@ createdir() {
 				O|o) mkdir $1
 					if [ $? -eq 0 ]
 					then
-						printf "$succes le répertoire $1 a été créé\n"
+						printf "$success le répertoire $1 a été créé\n"
 						return 0
 					else
 						return 1
@@ -94,7 +104,7 @@ createdir() {
 					return 1
 					;;
 				*)
-					printf  "$error le répertoire $1 n'existe pas voulez-vous le créer ? O/n"
+					printf  "$error le répertoire $1 n'existe pas voulez-vous le créer ? [O/n] "
 					read create
 					;;
 			esac
@@ -116,7 +126,7 @@ setnbc() {
 			read nbc
 		elif [[ "$nbc" =~ $float ]]
 		then
-			printf "$error Le nombre de captures par minute doit être un nombre entier"
+			printf "$error Le nombre de captures par minute doit être un nombre entier\n"
 			printf "Combien de captures voulez-vous faire par minute ? "
 			read nbc
 		else
@@ -131,15 +141,17 @@ setnbc() {
 configfile() {
 	if [ ! -d /etc/captures ]
 	then
-		mkdir /etc/captures && return 0 || return 1
+		mkdir /etc/captures || return 1
+		touch $configfile && return 0 || return 1
 	else
-		if [ ! -e /etc/captures/captures.config ]
+		if [ ! -e $configfile ]
 		then
-			touch captures.config || return 1 
-			printf "directory = $capturespath\npathlog = $logpath\nnbc=$nbc\n">captures.config
+			touch $configfile || return 1
+			echo -e "directory = $capturespath\npathlog = $logpath\nnbc=$nbc" > $configfile || return 1
 			return 0
 		fi
 	fi
+	echo -e "directory = $capturespath\npathlog = $logpath\nnbc=$nbc\n" > $configfile
 	return 0
 }
 
@@ -172,8 +184,8 @@ permissions() {
 	chmod 770 $capturespath || return 2
 	chown -R www-data:www-data $logpath || return 3
 	chmod 770 $logpath || return 3
-	chown -R /etc/captures/captures.config || return 4
-	chmod 770 /etc/captures/captures.config || return 4
+	chown -R www-data:www-data $configfile || return 4
+	chmod 660 $configfile || return 4
 }
 
 asroot() {
@@ -190,7 +202,7 @@ main() {
 	direxists public_html || errore "n'a pas réussi à créer le dossier $dir/public_html"
 	direxists data || errore "n'a pas réussi à créer le dossier $dir/data"
 	copy || errore "n'a pas réussi à copier les fichiers du répertoire de install.sh"
-	modifapache 
+	modifapache
 	case $? in
 		1) errore "n'a pas réussi à modifier '<Directory /var/www/>' par '<Directory /var/www/html/>' dans le fichier $apacheconf";;
 		2) errore "n'a pas réussi à modifier 'Options Indexes FollowSymLinks' par 'Options FollowSymLinks' dans le fichier $apacheconf";;
@@ -206,7 +218,13 @@ main() {
 		setconfigs $2 $3 $4
 	fi
 	configfile || errore "n'a pas réussi à configurer le fichier de configuration"
-	permissions || errore "n'a pas pu modifier les droits du répertoire /var/www/html"
+	permissions
+	case $? in
+	1) errore "n'a pas pu modifier les droits du répertoire $dir";;
+	2) errore "n'a pas pu modifier les droits du répertoire $capturespath";;
+	3) errore "n'a pas pu modifier les droits du répetoire $logpath";;
+	4) errore "n'a pas pu modifier les droits du fichier de $configfile";;
+	esac
 	printf "$success les configurations nécessaires ont bien été effectuées\n"
 	exit 0
 }
