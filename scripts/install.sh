@@ -62,7 +62,7 @@ modifapache() {
 	echo "1 done"
 	sed -i "s/Indexes//g" $apacheconf || ret=2
 	echo "2 done"
-	r=$(grep -i -P -o "(?<=DocumentRoot ).*" $apacheconf2)
+	r=$(grep -i -P "(?<=DocumentRoot ).*" $apacheconf2)
 	echo "r = $r"
 	if [[ "$r" != "/var/www/html/public_html" ]]
 	then
@@ -152,11 +152,11 @@ configfile() {
 		if [ ! -e $configfile ]
 		then
 			touch $configfile || return 1
-			echo -e "directory = $capturespath\npathlog = $logpath\nnbc=$nbc" > $configfile || return 1
+			echo -e "directory = $capturespath\npathlog = $logpath\nnbc = $nbc" > $configfile || return 1
 			return 0
 		fi
 	fi
-	echo -e "directory = $capturespath\npathlog = $logpath\nnbc=$nbc\n" > $configfile
+	echo -e "directory = $capturespath\npathlog = $logpath\nnbc = $nbc\n" > $configfile
 	return 0
 }
 

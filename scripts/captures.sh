@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\nstart -d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] [nberreurs] affiche la variable désirée\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
+usage=$(printf "USAGE : ./captures.sh [start] [OPTIONS]\nstart : effectue des captures toutes les secondes\n[OPTIONS]\nstart -d,--debug exécute et affiche toutes les logs\nget [capturespath] [logpath] [nbcaptures] [nberreurs] affiche la variable désirée\nset [capturespath] [logpath] [nbcaptures] : modifie le paramètre spécifié\nlog : montre le fichier log.txt\take [one] [nombre de captures] prend x captures \nclear :  supprime touts les fichiers du répertoire d'enregistrement de captures\nreconfig : recharge le fichier de configuration\n-h,--help montre cette page")
 error="\e[31merreur :\e[39m"
 success="\e[32msuccés :\e[39m"
 phelp=": voir --help pour plus d'informations\n"
@@ -27,21 +27,12 @@ errore() {
 toabsolute() {
 	if  [[ $1 == "~/"* ]]
 	then
-		case $2 in
-		l)  pathlog=$( echo $1|sed 's/~//' )
-			pathlog="/home/$(echo $USER)$pathlog"
-			;;
-		d)	directory=$( echo "$1"|tr "~" "/home" )
-			directory="/home/$(echo $USER)$directory";;
-		*)  exit 1;;
-		esac
+			dirabs=$( echo $1|sed 's/~//')
+			dirabs="/home/$(echo $USER)$dirabs"
 	else
-		case $2 in
-		l) pathlog=$(readlink -f $1);;
-		d) directory=$(readlink -f $1);;
-		*) exit 1;;
-		esac
+			dirabs=$(readlink -f $1)
 	fi
+	echo "$dirabs"
 }
 
 path() {
@@ -82,12 +73,12 @@ configfile() {
 
 pathlog() {
     pathlog=$(cat $configfile|grep -P -o "(?<=pathlog = )\S*")
-	toabsolute $pathlog l
+	pathlog=$(toabsolute $pathlog)
 }
 
 pathdirectory() {
     directory=$(cat $configfile|grep -P -o "(?<=directory = )\S*")
-	toabsolute $directory d
+	directory=$(toabsolute $directory)
 }
 
 nbc() {
@@ -100,13 +91,13 @@ config() {
 	[ ! e /etc/captures/captures.config ]&&touch captures.config
 	printf "Dans quel répertoire voulez-vous conserver le fichier log.txt dans lequel vous trouverez les logs d'erreur des captures effectuées ? "
 	read pathlog
-	toabsolute $pathlog l
+	pathlog=$(toabsolute $pathlog)
 	[[ -d $pathlog ]]||sdir $pathlog l 1
 	echo "pathlog = $pathlog" >> $configfile
 	printf "Le fichier log.txt sera conservé dans $pathlog\n"
 	printf "Dans quel répertoire voulez vous enregistrer les captures qui seront faites ? "
 	read directory
-	toabsolute $directory d
+	directory=$(toabsolute $directory)
 	if [ ! -d $directory ]
 	then sdir $directory d 1
 	fi
@@ -122,77 +113,96 @@ config() {
 	exit 0
 }
 
-updatedir() {
-	if [ "$#" -lt "3" ]
+setdir() {
+	if [ "$1" == "c" ]
 	then
-		echo "update dir in then\n"
-		case $2 in 
-			d)
-				echo "update dir in case d\n"
-				r=$(grep -i -P "(?<=directory = \S*")
-				sed -E -i 's/(?<=directory = )\S*/$2/gm;t;d' <<< $r $configfile;;
-			l)
-				sed s/$(cat /home/esther/.local/bin/captures.config|grep -P -o "(?<=directory = )\S*")//g -i $configfile
-				echo $1>>configfile
-				echo "logpath = $1">>configfile
-				[ -e $configfile ]&&pathlog=$(cat $configfile|grep -P -o "(?<=pathlog = )\S*")
-		esac
+		printf "Dans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
+		read d
+		directory=$(toabsolute $d)
+		[ -d $directory ]&&return 0||createdir $directory
+		[ $? -eq 0 ] && return 0 || return 1
 	else
-		case $2 in
-		d) echo "directory = $1">>$configfile;;
-		l) echo "logpath = $1">>$configfile;;
-		esac
-		cat $configfile
+		printf "Dans quel répertoire voulez-vous enregistrer le fichier log.txt le journal d'erreurs ? "
+		read l
+		pathlog=$(toabsolute $l)
+		[ -d $pathlog ]&&return 0||createdir $pathlog
+		[ $? -eq 0 ] && return 0 || return 1
 	fi
 }
 
-
-sdir() {
-	printf "$error le répertoire $1 n'existe pas voulez-vous le créer ? O/n "
+createdir() {
+	printf "Le répertoire spécifié n'existe pas, voulez-vous le créer ? [O/n] "
 	read create
         while [ "$create" != "O" ] || [ "$create" != "o" ] || [ "$create" != "N" ] || [ "$create" != "n" ]
 		do
 			case $create in
-				O|o)
-					if [[ ! -z $1 ]]
+				O|o) mkdir $1
+					if [ $? -eq 0 ]
 					then
-						updatedir $1 $2 $3
-						if [ "$?" -ne "0"]
-						then 
-							echo "not update"
-							exit 1
-						fi
+						printf "$success le répertoire $1 a été créé\n"
+						return 0
+					else
+						return 1
 					fi
-					case $2 in
-						d) toabsolute $1 d&&echo "$1 = $directory\n"&&mkdir $directory;;
-						l) toabsolute $1 l&&echo "$1 = $pathlog\n"&&mkdir $pathlog;;
-						*) exit 1;;
-					esac
-						if [ "$?" -eq 0 ]
-							then
-								if [ "$#" -lt "3" ]
-								then
-									printf "$success répertoire créé et mis à jour\n"
-									exit 0
-								else
-									printf "$success répertoire créé et mis à jour\n"
-									return 0
-									
-								fi
-							else
-									errore "une erreur est survenue"
-						fi
-						;;
+					;;
 				N|n)
-					printf "Le répertoire n'a pas été mis à jour\n"
-					exit 1
-									;;
+					printf "Le répertoire $1 ne sera pas créé\n"
+					return 1
+					;;
 				*)
-					printf  "$error le répertoire $directory n'existe pas voulez-vous le créer ? O/n"
+					printf  "$error le répertoire $1 n'existe pas voulez-vous le créer ? [O/n] "
 					read create
-							;;
+					;;
 			esac
 		done
+}
+
+setnbc() {
+	local intp='^[+]?[0-9]+$'
+	local float='^[+]?[-]?[0-9]+([.,][0-9]+)?$'
+	local intn='^[-][0-9]+([.][0-9]+)?$'
+	printf "Combien de captures voulez-vous faire par minute ? "
+	read nbc
+	while [[ ! "$nbc" =~ $intp ]]
+	do
+		if [[ "$nbc" =~ $intn ]]
+		then
+			printf "$error le nombre de captures par minute doit être positif\n"
+			printf "Combien de captures voulez-vous faire par minute ? "
+			read nbc
+		elif [[ "$nbc" =~ $float ]]
+		then
+			printf "$error Le nombre de captures par minute doit être un nombre entier\n"
+			printf "Combien de captures voulez-vous faire par minute ? "
+			read nbc
+		else
+			printf "$error un nombre positif et entier est attendu\n"
+			printf "Combien de captures voulez-vous faire par minute ? "
+			read nbc
+		fi
+	done
+	return 0
+}
+
+configuration() {
+	rm -f $configfile
+	echo -e "directory = $directory\npathlog = $pathlog\nnbc = $nbc\n" > $configfile || return 1
+	return 0
+}
+
+permissions() {
+	case $1 in
+	c) chown -R www-data:www-data $directory || return 1
+	   chmod 770 $directory || return 1 
+	   ;;
+	l) chown -R www-data:www-data $pathlog || return 1
+	   chmod 770 $pathlog || return 1
+	   ;;
+	conf) chown -R www-data:www-data $configfile || return 1
+		  chmod 660 $configfile || return 1
+		;;
+	esac
+	return 0
 }
 
 reconfig() {
@@ -319,8 +329,8 @@ displaylogs() {
 }
 
 starting() {
-	configfile
-	pathlog
+	#configfile
+	#pathlog
 	log
 	nbc
 	pathdirectory
@@ -340,23 +350,37 @@ then
 elif [[ "$#" -gt "1" ]]
 then
 	case  $1 in
-		get) configfile
+		get) #configfile
 			case $2 in 
              capturespath) pathdirectory
 							printf "$directory\n"
              ;;
              logpath) 
-			 			printf "$pathlog\n"
+			 		printf "$pathlog\n"
              ;;
              nbcaptures) nbc
 			 			printf "$nbc\n"
              ;;
-			 nberreurs) 
+			 nberreurs)
 			 	printf "Il y a : $(grep -c "erreur" $pathlog/log.txt) erreurs dans le fichier $pathlog/log.txt\n"&&exit 0
 			 ;;
              *) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
              esac
-             ;;
+			 ;;
+		set) starting
+			 case $2 in
+			 capturespath) setdir c || errore "n'a pas réussi à mettre à jour le répertoire"
+			 			   permissions c || errore "n'a pas réussi à changer les permissions de ce répertoire";;
+			 logpath) setdir l || errore "n'a pas réussi à mettre à jour le répertoire"
+			 		  permissions l || errore "n'a pas réussi à changer les permissions de ce répertoire";;
+			 nbcaptures) setnbc || errore "n'a pas réussi à mettre à jour le nombre de captures";;
+			 *) errore "Usage : captures set [capturespath] [logpath] [nbcaptures] : modifie le paramètre spécifié";;
+			 esac
+			 configuration || errore "n'a pas réussi à configurer le fichier de configuration"
+			 permissions conf || errore "n'a pas réussi à modifier les droits du fichier de configuration mis à jour"
+			 printf "$success les modifications ont bien été enregistrées\n"
+			 exit 0
+			;;
         take) starting
 			intp='^[+]?[0-9]+$'
 			float='^[+]?[-]?[0-9]+([.,][0-9]+)?$'
@@ -394,7 +418,6 @@ then
 					*) errorh "Trop d'options";;
 				esac
 			fi
-			starting
             ;;
         stop) errore "Usage : captures stop : arrête de prendre des captures";;
 		reconfig) errore "Usage : captures reconfig : recharge le fichier de configuration";;
@@ -407,7 +430,7 @@ elif [[ "$#" -eq "1" ]]
 then
 	case $1 in 
 		-d|--debug) errore "Usage : ./captures.sh start -d,--debug  : affiche des informations supplémentaires";;
-		set) errore "Usage captures -s, --set <repertoire>";;
+		set) errore "Usage : captures set [capturespath] [logpath] [nbcaptures] : modifie le paramètre spécifié";;
 		log) configfile
 			pathlog
 			log
@@ -445,7 +468,7 @@ then
         dir
         fsw
         #fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
-		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
+		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
 		displaylogs
         sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
         #done
@@ -464,7 +487,8 @@ else
             fswebcam --no-banner -q  $directory/$(date '+%Y.%m.%d.%H.%M.%S')jpg&
             printf "$(ls -l $directory|wc -l) images dans $directory\n"
             printf "$success $(date '+%Hh%Mm%Ss') -> capture prise\n"
-            sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
+			echo "nbc = $nbc"
+            sleep $(echo $(( 60/$nbc )) | awk '{print int($1+0.5)}')
         #done
     done
 fi
