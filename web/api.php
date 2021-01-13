@@ -220,11 +220,19 @@ function capturesSearchRequestValid($data) {
     $sandata = $data; //TODO change sanitazer, potential JSON injection
     $jdata = json_decode($sandata);
     if($jdata == NULL) return NULL;
-    if(!is_int($jdata->year) || $jdata->year < 0) return NULL;
-    if(!is_int($jdata->month) || $jdata->month <= 0 || $jdata->month > 12) return NULL;
-    if(!is_int($jdata->day) || $jdata->day <= 0 || $jdata->day > 31) return NULL;
-    if(!is_int($jdata->hour) || $jdata->hour < -1 || $jdata->hour > 23) return NULL;
-    if(!is_int($jdata->minute) || $jdata->minute < -1 || $jdata->minute > 59) return NULL;
+    if($jdata->action == NULL) return NULL;
+    if($jdata->action == "search") {
+        if(!is_int($jdata->year) || $jdata->year < 0) return NULL;
+        if(!is_int($jdata->month) || $jdata->month <= 0 || $jdata->month > 12) return NULL;
+        if(!is_int($jdata->day) || $jdata->day <= 0 || $jdata->day > 31) return NULL;
+        if(!is_int($jdata->hour) || $jdata->hour < -1 || $jdata->hour > 23) return NULL;
+        if(!is_int($jdata->minute) || $jdata->minute < -1 || $jdata->minute > 59) return NULL;
+    }else if($jdata->action == "last") {
+        if(!is_int($jdata->number) || $jdata->number <= 0) return NULL;
+    }else {
+        return NULL;
+    }
+
     return $jdata;
 }
 
@@ -266,6 +274,14 @@ function searchCapturesByDate($date) {
     return $fc;
 }
 
+function searchCaptureByLast($number) {
+    global $CAPTURES_PATH;
+    $files = glob($CAPTURES_PATH."/*");
+    $toget = count($files) - $number;
+    if($toget < 0) $toget = 0;
+    return array_slice($files, $toget);
+}
+
 function createSecureDeliveryPath() {
     global $DELIVERY_PATH;
 
@@ -302,9 +318,9 @@ function removeOldDeliveries($token) {
     }
 }
 
-function capturesAction($folder, $data) {
+function capturesAction($folder, $data, $last) {
     global $CAPTURES_PATH;
-    $fc = searchCapturesByDate($data);
+    $fc = ($last) ? searchCaptureByLast($data->number) : searchCapturesByDate($data);
     if($fc === FALSE) return FALSE;
     $cutlen = strlen($CAPTURES_PATH);
     $files = array();
@@ -404,7 +420,12 @@ function processSettings($view, $win) {
     $ret->operationSuccess = $win;
 
     if($view) {
-        $ret->configuration = parseConfig(readConfig());
+        $rawconfig = readConfig();
+        if($rawconfig == NULL) {
+            $ret->operationSuccess = FALSE;
+        }else {
+            $ret->configuration = parseConfig($rawconfig);   
+        }
     }
     
     echo json_encode($ret);
@@ -440,8 +461,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
             if($captreq != NULL) {
                 if(isLogged()) {
                     $folder = createSecureDeliveryPath();
-                    $files = capturesAction($folder, $captreq);
-                    processCaptures($folder, $files, $files === FALSE);
+                    if($captreq->action == "search") {
+                        $files = capturesAction($folder, $captreq, FALSE);
+                        processCaptures($folder, $files, $files === FALSE);
+                    }else if($captreq->action == "last") {
+                        $files = capturesAction($folder, $captreq, TRUE);
+                        processCaptures($folder, $files, $files === FALSE);
+                    }
                 }else {
                     processError(TRUE);
                 }
@@ -455,7 +481,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     processSettings(TRUE, TRUE);
                 }else if($data !== NULL) {
                     writeConfig($data);
-                    if(isServiceRuning()) updateShellScript();
+                    if(isServiceRuning() == 0) {
+                        updateShellScript();
+                    }
                     processSettings(FALSE, TRUE);
                 }else {
                     processSettings(FALSE, FALSE);
