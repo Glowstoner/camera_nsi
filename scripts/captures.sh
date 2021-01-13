@@ -61,11 +61,12 @@ configfile() {
 	if [ ! -d /etc/captures ]
 	then
 		mkdir /etc/captures
+		touch /etc/captures/captures.config
 	else
 		if [ ! -e /etc/captures/captures.config ]
 		then
-			touch captures.config
-			printf "directory = /var/www/html/data/captures\npathlog = /var/www/html/data\nnbc=60\n">captures.config
+			touch /etc/captures/captures.config
+			printf "directory = /var/www/html/data/captures\npathlog = /var/www/html/data\nnbc = 60\n">/etc/captures/captures.config
 		fi
 	fi
     configfile=/etc/captures/captures.config
@@ -118,12 +119,22 @@ setdir() {
 	then
 		printf "Dans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
 		read d
+		while [[ "$d" == "" ]]
+		do 
+			printf "$error Le répertoire ne peut pas être vide\nDans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
+			read d
+		done
 		directory=$(toabsolute $d)
 		[ -d $directory ]&&return 0||createdir $directory
 		[ $? -eq 0 ] && return 0 || return 1
 	else
 		printf "Dans quel répertoire voulez-vous enregistrer le fichier log.txt le journal d'erreurs ? "
 		read l
+		while [[ "$l" == "" ]]
+		do 
+			printf "$error Le répertoire ne peut pas être vide\nDans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
+			read l
+		done
 		pathlog=$(toabsolute $l)
 		[ -d $pathlog ]&&return 0||createdir $pathlog
 		[ $? -eq 0 ] && return 0 || return 1
@@ -282,7 +293,6 @@ log() {
     then
 		echo "$(date '+%Y.%m.%d.%H.%M.%S') -> le dossier $pathlog n'existe pas">>log.txt
         errore "Le répertoire de logs $pathlog n'existe pas"	
-        #sdir||exit 1
     fi
 }
 
@@ -290,7 +300,8 @@ logd() {
     	if [ ! -d "$pathlog" ]
         then
             printf "$error $(date '+%H:%M:%S') -> le dossier $pathlog n'existe pas\n"
-            #sdir||exit 1
+            setdir l ||exit 1
+			permissions l
         fi
 }
 
@@ -339,9 +350,13 @@ starting() {
 
 asroot
 configfile
-pathlog
-[ ! -f $pathlog/log.txt ]&&touch $pathlog/log.txt
 path
+if [[ "$1" != "set" ]]
+then
+	pathlog
+	log
+	[ ! -f $pathlog/log.txt ]&&touch $pathlog/log.txt
+fi
 
 if [ "$#" -gt "2" ]||[ "$#" -eq "0" ]
 then
@@ -353,27 +368,33 @@ then
 		get) #configfile
 			case $2 in 
              capturespath) pathdirectory
-							printf "$directory\n"
+							printf "$directory\n"&&exit 0
              ;;
              logpath) 
-			 		printf "$pathlog\n"
+			 		printf "$pathlog\n"&&exit 0
              ;;
              nbcaptures) nbc
-			 			printf "$nbc\n"
+			 			printf "$nbc\n"&&exit 0
              ;;
 			 nberreurs)
 			 	printf "Il y a : $(grep -c "erreur" $pathlog/log.txt) erreurs dans le fichier $pathlog/log.txt\n"&&exit 0
 			 ;;
-             *) errore "Usage : get [capturespath] [logpath] [nbcaptures] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
+             *) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prises par min ou le nombre d'erreurs dans le fichier log.txt";;
              esac
 			 ;;
-		set) starting
-			 case $2 in
-			 capturespath) setdir c || errore "n'a pas réussi à mettre à jour le répertoire"
+		set) #starting
+			 case $2 in			 
+			 capturespath) pathlog
+			 				nbc
+			 			   setdir c || errore "n'a pas réussi à mettre à jour le répertoire"
 			 			   permissions c || errore "n'a pas réussi à changer les permissions de ce répertoire";;
-			 logpath) setdir l || errore "n'a pas réussi à mettre à jour le répertoire"
+			 logpath) pathdirectory
+			 			nbc
+			 		  setdir l || errore "n'a pas réussi à mettre à jour le répertoire"
 			 		  permissions l || errore "n'a pas réussi à changer les permissions de ce répertoire";;
-			 nbcaptures) setnbc || errore "n'a pas réussi à mettre à jour le nombre de captures";;
+			 nbcaptures) pathlog
+			 			 pathdirectory
+			 			setnbc || errore "n'a pas réussi à mettre à jour le nombre de captures";;
 			 *) errore "Usage : captures set [capturespath] [logpath] [nbcaptures] : modifie le paramètre spécifié";;
 			 esac
 			 configuration || errore "n'a pas réussi à configurer le fichier de configuration"
@@ -466,7 +487,7 @@ then
         log
         cam
         dir
-        fsw
+        fswd
         #fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
 		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
 		displaylogs

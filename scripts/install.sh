@@ -25,9 +25,20 @@ toabsolute() {
 }
 
 required() {
-	a=$(dpkg --get-selections | grep apache)
-	[[ "$a" == "" ]] && return 1
-
+	a=$(apt list --installed 2>/dev/null | grep apache )
+	p=$(apt list --installed 2>/dev/null | grep php )
+	if [[ "$a" == "" ]]||[[ "$p" == "" ]]
+	then
+		return 12
+	elif [[ "$a" == "" ]]
+	then 
+		return 1
+	elif [[ "$p" == "" ]]
+	then
+		return 2
+	else
+		return 0
+	fi
 }
 
 direxists() {
@@ -77,12 +88,22 @@ setdir() {
 	then
 		printf "Dans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
 		read d
+		while [[ "$d" == "" ]]
+		do 
+			printf "$error Le répertoire ne peut pas être vide\nDans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
+			read d
+		done
 		capturespath=$(toabsolute $d)
 		[ -d $capturespath ]&&return 0||createdir $capturespath
 		[ $? -eq 0 ] && return 0 || return 1
 	else
 		printf "Dans quel répertoire voulez-vous enregistrer le fichier log.txt le journal d'erreurs ? "
 		read l
+		while [[ "$l" == "" ]]
+		do 
+			printf "$error Le répertoire ne peut pas être vide\nDans quel répertoire voulez-vous enregistrer les captures qui seront faites ? "
+			read l
+		done
 		logpath=$(toabsolute $l)
 		[ -d $logpath ]&&return 0||createdir $logpath
 		[ $? -eq 0 ] && return 0 || return 1
@@ -202,7 +223,22 @@ asroot() {
 }
 
 main() {
-	asroot || errore "Veuillez exécutez en root"
+	required
+	case $? in
+	1) printf "$error vous n'avez pas apache2 veuillez l'installer\n"
+	   apt install apache2 || errore "n'a pas réussi à installer apache2"
+	   service apache2 restart
+		;;
+	2)  printf "$error vous n'avez pas php veuillez l'installer\n"
+	    apt install php libapache2-mod-php || errore "n'a pas réussi à installer php"
+		service apache2 restart
+		;;
+	12) printf "$error vous n'avez ni apache2 ni php veuillez les installer\n"
+	    apt install apache2 || errore "n'a pas réussi à installer apache2"
+		apt install php libapache2-mod-php || errore "n'a pas réussi à installer php"
+		service apache2 restart
+		;;
+	esac
 	delete || errore "n'a pas réussi à supprimer les fichiers de $dir"
 	direxists public_html || errore "n'a pas réussi à créer le dossier $dir/public_html"
 	direxists data || errore "n'a pas réussi à créer le dossier $dir/data"
@@ -234,6 +270,7 @@ main() {
 	exit 0
 }
 
+asroot || errore "Veuillez exécutez en root"
 if [ $# -gt 3 ]
 then 
 	errore "Trop d'arguments\n$phelp"
