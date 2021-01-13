@@ -1,7 +1,0 @@
-2021.01.13.14.00.54 -> le dossier /home/esther/Documents/fswebcam/log n'existe pas
-2021.01.13.14.03.41 -> le dossier /home/esther/Documents/fswebcam/log n'existe pas
-2021.01.13.14.07.13 -> le dossier /home/esther/Documents/fswebcam/log n'existe pas
-2021.01.13.14.07.29 -> le dossier  n'existe pas
-2021.01.13.14.07.39 -> le dossier  n'existe pas
-2021.01.13.14.08.05 -> le dossier  n'existe pas
-2021.01.13.19.39.39 -> le dossier  n'existe pas
