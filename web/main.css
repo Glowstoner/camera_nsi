@@ -2,6 +2,13 @@ a {
     text-decoration: none;
 }
 
+.mdl-cell {
+    box-sizing: border-box;
+    background-color: white;
+    padding-left: 8px;
+    padding-top: 4px;
+}
+
 #maingloballogo {
     color: rgb(49, 49, 49);
     font-size: 30vh;
@@ -10,13 +17,6 @@ a {
 #mainctlinfo {
     font-size: 5vh;
     font-family: 'Roboto';
-}
-
-#main {
-    background-color: white;
-    display: inline-block;
-    vertical-align: middle;
-    line-height: 100%;
 }
 
 #mainsearchcaptures {
@@ -47,6 +47,11 @@ a {
     flex-wrap: wrap; 
     align-items: center;
     align-content: center;
+    justify-content: center;
+}
+
+#mainlivecapturecontainer {
+    display: flex;
     justify-content: center;
 }
 
@@ -119,10 +124,10 @@ a {
 }
 
 #maincontainer {
-    background-color: white;
+    background-color: #f5f5f5;
     background-repeat: no-repeat;
     background-size: cover;
-    line-height: 100vh;  
+    
     text-align: center;
 }
 
@@ -138,6 +143,7 @@ a {
     margin-inline: 10vh;
     margin-top: 5vh;
     width: 100px;
+    margin-bottom: 20px;
 }
 
 #mainsecctl {
