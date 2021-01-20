@@ -42,7 +42,7 @@
             <section id="mainsecctl">
                 <div id="maincontainer">
                     <div class="mdl-grid">
-                        <div id="mainlivecapturecontainer" class="mdl-cell mdl-cell--12-col">
+                        <div id="mainlivecapturecontainer" class="mdl-cell mdl-shadow--2dp mdl-cell--12-col">
                             <div class="capture-image mdl-card mdl-shadow--2dp">
                                 <div class="mdl-card__title mdl-card--expand"></div>
                                 <div class="mdl-card__actions">
@@ -83,16 +83,32 @@
                             </div>
                         </div>
                         <div class="mdl-cell mdl-shadow--2dp mdl-cell--6-col">
-                            <p>Chargement ...</p>
-                            <button id="mainerrorbutto" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mainsearchctl">
-                                <i class="material-icons">search</i>
-                            </button>
-                            <p>Prendre un nombre de captures : </p>
-                            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                                <input class="mdl-textfield__input" type="text" pattern="[1-9][0-9]*" id="maintakeinput">
-                                <label class="mdl-textfield__label" for="maintakeinput">Nombre</label>
-                                <span class="mdl-textfield__error">Valeur invalide</span>
-                            </div
+                            <p class="mainsettings">Nombre d'erreurs</p>
+                            <div class="errorsdisplay">
+                                <h5 id="mainnberrors">Chargement ...</h5> 
+                                <button id="mainerrorbutton" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mainsearchctl">
+                                    <span class="material-icons">
+                                        visibility
+                                    </span>
+                                </button>
+                            </div>
+                            <!--<div class="maintakecaptures">-->
+                                <p class="mainsettings">Prendre des captures</p>
+                                <div class="errorsdisplay">
+                                    <div id="numbercapturefield">
+                                    <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" id=fieldcapture>
+                                        <input class="mdl-textfield__input" type="text" pattern="[1-9][0-9]*" id="maintakeinput">
+                                        <label class="mdl-textfield__label" for="maintakeinput">Nombre</label>
+                                        <span class="mdl-textfield__error">Valeur invalide</span>
+                                    </div>
+                                    </div>
+                                    <button id="maincamerabutton" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored mainsearchctl">
+                                        <span class="material-icons">
+                                            add_a_photo
+                                        </span>
+                                    </button>
+                                </div>
+                            <!--</div>-->
                         </div>
                     </div>
                     

@@ -217,7 +217,7 @@ permissions() {
 }
 
 reconfig() {
-    pathlog=$(grep -i -P -o "(?<=directory = )\S*" $configfile)
+    pathlog=$(grep -i -P -o "(?<=pathlog = )\S*" $configfile)
     directory=$(grep -i -P -o "(?<=directory = )\S*" $configfile)
     nbc=$(grep -i -P -o "(?<=nbc = )\S*" $configfile)
 	rm /tmp/captures_reconfig
@@ -481,8 +481,6 @@ if [ "$debug" -eq "0" ]
 then
     while true
     do
-        #for i in $(seq 1 1 $nbc)
-        #do
 		[ -e /tmp/captures_reconfig ]&&reconfig
         log
         cam
@@ -492,14 +490,10 @@ then
 		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
 		displaylogs
         sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
-        #done
     done
 else
     while true
     do
-        #for i in $(seq 1 1 $nbc)
-            #do
-            #echo "------------i = $i--------------"
 			[ -e /tmp/captures_reconfig ]&&reconfig
             logd&& printf "répertoire log = $pathlog\n"
             camd&& printf "/dev/video0 trouvé\n"
@@ -510,6 +504,5 @@ else
             printf "$success $(date '+%Hh%Mm%Ss') -> capture prise\n"
 			echo "nbc = $nbc"
             sleep $(echo $(( 60/$nbc )) | awk '{print int($1+0.5)}')
-        #done
     done
 fi
