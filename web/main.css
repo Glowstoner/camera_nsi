@@ -44,6 +44,14 @@ a {
     margin-right: 13%;
 }
 
+#maindeletebutton {
+    background-color: #607d8b;
+    display: inline-table;
+    vertical-align: middle;
+    margin-bottom: 30px;
+    margin-right: 15px;
+}
+
 #mainsearchdate {
     border: 2px solid #607d8b;
     border-radius: 3px;
@@ -86,7 +94,7 @@ a {
 #fieldcapture {
     vertical-align: middle;
     width: 70px;
-    margin-left: 80px;
+    margin-left: 90px;
     margin-bottom: 20px;
 }
 .mainsettings {

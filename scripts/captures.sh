@@ -25,7 +25,7 @@ errore() {
 }
 
 toabsolute() {
-	if  [[ $1 == "~/"* ]]
+	if  [[ $1 == "~/"* ]]||[[ $1 == "~" ]]
 	then
 			dirabs=$( echo $1|sed 's/~//')
 			dirabs="/home/$(echo $USER)$dirabs"
@@ -66,7 +66,7 @@ configfile() {
 		if [ ! -e /etc/captures/captures.config ]
 		then
 			touch /etc/captures/captures.config
-			printf "directory = /var/www/html/data/captures\npathlog = /var/www/html/data\nnbc = 60\n">/etc/captures/captures.config
+			printf "directory = /var/www/html/data/captures\npathlog = /var/www/html/data\nnbc = 60\nrefd = /\npdisk = 95\n">/etc/captures/captures.config
 		fi
 	fi
     configfile=/etc/captures/captures.config
@@ -83,35 +83,60 @@ pathdirectory() {
 }
 
 nbc() {
-    nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\S*")
+    nbc=$(cat $configfile|grep -P -o "(?<=nbc = )\d*")
+}
+
+pdisk() {
+	pdisk=$(cat $configfile|grep -P -o "(?<=pdisk = )\d*")
+}
+
+refd() {
+	refd=$(cat $configfile|grep -P -o "(?<=refd = )\S*")
 }
 
 config() {
 	printf "Configuration...\n"
-	[ ! -d /etc/captures ]&&mkdir /etc/captures
-	[ ! e /etc/captures/captures.config ]&&touch captures.config
-	printf "Dans quel répertoire voulez-vous conserver le fichier log.txt dans lequel vous trouverez les logs d'erreur des captures effectuées ? "
-	read pathlog
-	pathlog=$(toabsolute $pathlog)
-	[[ -d $pathlog ]]||sdir $pathlog l 1
-	echo "pathlog = $pathlog" >> $configfile
-	printf "Le fichier log.txt sera conservé dans $pathlog\n"
-	printf "Dans quel répertoire voulez vous enregistrer les captures qui seront faites ? "
-	read directory
-	directory=$(toabsolute $directory)
-	if [ ! -d $directory ]
-	then sdir $directory d 1
+	starting
+	setdir l
+	if [ $? -eq 0 ]
+	then 
+		printf "$success lLe fichier log.txt sera conservé dans $pathlog\n"
+	else
+		printf "$errore une erreur est survenue la valeur par défaut sera conservée\n"
 	fi
-	echo "directory = $directory" >> $configfile
-	if [ "$?" -ne "0" ]
-	then rm $configfile
-		exit 1
+	setdir c
+	if [ $? -eq 0 ]
+	then
+		printf "$success les captures seront enregistrées dans le répertoire $directory\n"
+	else
+		printf "$errore une erreur est survenue la valeur par défaut sera conservée\n"
 	fi
-	printf "Les images seront conservées dans $directory\n"
-	cp $thispath/$name ${patha[0]}/$fname
-	printf "Captures peut commencé à être utilisé\n"
+	setnumbers nbc
+	if [ $? -eq 0 ]
+	then
+		printf "$succes $nbc captures seront effectuées par minute\n"
+	else
+		printf "$errore une erreur est survenue la valeur par défaut sera conservée\n"
+	fi
+	refd
+	if [ $? -eq 0 ]
+	then
+		printf "$succes le calcul du pourcentage de l'espace utilisable utilisé par le répertoire contenant les captures sera $refd\n"
+	else
+		printf "$errore une erreur est survenue la valeur par défaut sera conservée\n"
+	fi
+	setnumbers pdisk
+	if [ $? -eq 0 ]
+	then
+		printf "$succes le contenu du dossier contenant les captures sera effacé s'il occupe $pdisk% de $refd\n"
+	else
+		printf "$errore une erreur est survenue la valeur par défaut sera conservée\n"
+	fi
+	configuration || return 1
+	permissions || return 1
+	printf "capture a bien été configuré\n"
 	printf "$usage\n"
-	exit 0
+	return 0
 }
 
 setdir() {
@@ -141,6 +166,18 @@ setdir() {
 	fi
 }
 
+setrefd() {
+	printf "Veuillez entrer un répertoire : "
+		read r
+		while [[ "$r" == "" ]]
+		do 
+			printf "$error Le répertoire ne peut pas être vide\nveuillez entrer un répertoire : "
+			read r
+		done
+		refd=$(toabsolute $r)
+		[ $? -eq 0 ] && return 0 || return 1
+}
+
 createdir() {
 	printf "Le répertoire spécifié n'existe pas, voulez-vous le créer ? [O/n] "
 	read create
@@ -168,36 +205,48 @@ createdir() {
 		done
 }
 
-setnbc() {
+setnumbers() {
 	local intp='^[+]?[0-9]+$'
 	local float='^[+]?[-]?[0-9]+([.,][0-9]+)?$'
 	local intn='^[-][0-9]+([.][0-9]+)?$'
-	printf "Combien de captures voulez-vous faire par minute ? "
-	read nbc
-	while [[ ! "$nbc" =~ $intp ]]
+	if [[ "$1" == "nbc" ]]
+	then
+		printq="Combien de captures voulez-vous faire par minute ? "
+	else
+		printq="À partir de quel pourcentage d'occupation de l'espace libre de $refd par le répertoire $directory le contenu de ce répertoire doit être supprimé ? "
+	fi
+	printf "$printq"
+	read n
+	while [[ ! "$n" =~ $intp ]]
 	do
-		if [[ "$nbc" =~ $intn ]]
+		if [[ "$n" =~ $intn ]]
 		then
-			printf "$error le nombre de captures par minute doit être positif\n"
-			printf "Combien de captures voulez-vous faire par minute ? "
-			read nbc
-		elif [[ "$nbc" =~ $float ]]
+			printf "$error le nombre doit être positif\n"
+			printf "$printq"
+			read n
+		elif [[ "$n" =~ $float ]]
 		then
-			printf "$error Le nombre de captures par minute doit être un nombre entier\n"
-			printf "Combien de captures voulez-vous faire par minute ? "
-			read nbc
+			printf "$error le nombre doit être un nombre entier\n"
+			printf "$printq"
+			read n
 		else
 			printf "$error un nombre positif et entier est attendu\n"
-			printf "Combien de captures voulez-vous faire par minute ? "
-			read nbc
+			printf "$printq"
+			read n
 		fi
 	done
+	if [[ "$1" == "nbc" ]]
+	then
+		nbc=$n
+	else
+		pdisk=$n
+	fi
 	return 0
 }
 
 configuration() {
 	rm -f $configfile
-	echo -e "directory = $directory\npathlog = $pathlog\nnbc = $nbc\n" > $configfile || return 1
+	echo -e "directory = $directory\npathlog = $pathlog\nnbc = $nbc\nrefd = $refd\npdisk = $pdisk\n" > $configfile || return 1
 	return 0
 }
 
@@ -220,11 +269,34 @@ reconfig() {
     pathlog=$(grep -i -P -o "(?<=pathlog = )\S*" $configfile)
     directory=$(grep -i -P -o "(?<=directory = )\S*" $configfile)
     nbc=$(grep -i -P -o "(?<=nbc = )\S*" $configfile)
+	pdisk=$(cat $configfile|grep -P -o "(?<=pdisk = )\d*")
+	refd=$(cat $configfile|grep -P -o "(?<=refd = )\S*")	
 	rm /tmp/captures_reconfig
 }
 
 stop() {
     ps axf | grep captures | grep -v grep | awk '{print "kill -9 " $1}' | sh
+}
+
+sizeof() {
+	local s=$(du -m $1)
+	echo $s | grep -P -o '(\d*(?=\s*total))'
+}
+
+checksize() {
+	local sd=$(sizeof $directory)
+	local dl=$(diskspaceleft)
+	local p=$(echo $(echo "$(echo "$sd/$dl"|bc -l)*100"|bc -l) | awk '{print int($1)}')
+	if [[ "$p" == "$pdisk" ]]||[[ "$p" > "$pdisk" ]]
+	then
+		cleard || return 1
+	fi
+	return 0
+}
+
+diskspaceleft() {
+	s=$(df -h $refd)
+	echo $s | grep -P -o '\d*(?=M\s*\d*%)'
 }
 
 take() {
@@ -346,6 +418,8 @@ starting() {
 	nbc
 	pathdirectory
 	dir
+	pdisk
+	refd
 }
 
 asroot
@@ -365,7 +439,7 @@ then
 elif [[ "$#" -gt "1" ]]
 then
 	case  $1 in
-		get) #configfile
+		get)
 			case $2 in 
              capturespath) pathdirectory
 							printf "$directory\n"&&exit 0
@@ -379,23 +453,53 @@ then
 			 nberreurs)
 			 	printf "Il y a : $(grep -c "erreur" $pathlog/log.txt) erreurs dans le fichier $pathlog/log.txt\n"&&exit 0
 			 ;;
-             *) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prises par min ou le nombre d'erreurs dans le fichier log.txt";;
+			 foldersize)
+			 	pathdirectory 
+			 	printf "La taille du dossier d'enregistrement des captures est $(sizeof $directory) Mo\n"&&exit 0
+			 ;;
+			 percentdisk)
+				pdisk
+				pathdirectory
+				printf "Le pourcentage d'occupation maximale possible du dossier $directory sur l'espace utilisable du dossier refd défini est de $pdisk\n"&&exit 0
+			;;
+			refd)
+				refd
+				printf "Le répertoire utilisé pour la comparaison de l'espace utilisable utilisé dessus par le dossier d'enregistrement des captures est $refd\n"&&exit 0
+			;;
+             *) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] [percentdisk] [refd] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prises par min ou le nombre d'erreurs dans le fichier log.txt ou le peramètre spécifié";;
              esac
 			 ;;
 		set) #starting
 			 case $2 in			 
-			 capturespath) pathlog
-			 				nbc
+			 capturespath) refd
+			 			   pathlog
+			 			   nbc
+						   pdisk
 			 			   setdir c || errore "n'a pas réussi à mettre à jour le répertoire"
 			 			   permissions c || errore "n'a pas réussi à changer les permissions de ce répertoire";;
 			 logpath) pathdirectory
-			 			nbc
+			 		  nbc
+					  pdisk
+					  refd
 			 		  setdir l || errore "n'a pas réussi à mettre à jour le répertoire"
 			 		  permissions l || errore "n'a pas réussi à changer les permissions de ce répertoire";;
 			 nbcaptures) pathlog
 			 			 pathdirectory
-			 			setnbc || errore "n'a pas réussi à mettre à jour le nombre de captures";;
-			 *) errore "Usage : captures set [capturespath] [logpath] [nbcaptures] : modifie le paramètre spécifié";;
+						 pdisk
+						 refd
+			 			setnumbers nbc || errore "n'a pas réussi à mettre à jour le nombre de captures";;
+			percentdisk) pathlog
+						 nbc
+						 pathdirectory
+						 refd
+						 setnumbers p || errore "n'a pas réussi à mettre à jour le pourcentage";;
+			refd) pathlog
+				  nbc
+				  pdisk
+				  pathdirectory
+				  setrefd 
+				  ;;
+			 *) errore "Usage : captures set [capturespath] [logpath] [nbcaptures] [percentdisk] [refd] : modifie le paramètre spécifié";;
 			 esac
 			 configuration || errore "n'a pas réussi à configurer le fichier de configuration"
 			 permissions conf || errore "n'a pas réussi à modifier les droits du fichier de configuration mis à jour"
@@ -458,7 +562,7 @@ then
 			less -f -r $pathlog/log.txt;;
 		clear) starting cleard ;;
         stop) stop;;
-        get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prise /min";;
+        get) errore "Usage : get [capturespath] [logpath] [nbcaptures] [nberreurs] [percentdisk] [refd] : affiche le répertoires des captures ou du fichier log.txt ou le nombre de captures prises par min ou le nombre d'erreurs dans le fichier log.txt ou le peramètre spécifié";;
 		reconfig)touch /tmp/captures_reconfig
 				 exit 0;;
 		start) starting;;
@@ -482,11 +586,11 @@ then
     while true
     do
 		[ -e /tmp/captures_reconfig ]&&reconfig
+		checksize
         log
         cam
         dir
         fswd
-        #fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>>$pathlog/log.txt
 		printf "erreur datant du $(date '+%d/%m/%Y à %Hh%Mm%Ss') :\n{$(fswebcam -q --no-banner $directory/$(date '+%Y.%m.%d.%H.%M.%S').jpg 2>&1)}\n">>$pathlog/log.txt
 		displaylogs
         sleep $(echo $((60/$nbc)) | awk '{print int($1+0.5)}')
@@ -495,6 +599,7 @@ else
     while true
     do
 			[ -e /tmp/captures_reconfig ]&&reconfig
+			checksize&& printf "la taille "
             logd&& printf "répertoire log = $pathlog\n"
             camd&& printf "/dev/video0 trouvé\n"
             dird&& printf "repertoire  $directory existe\n"
